@@ -35,6 +35,7 @@ c:/Users/derri/Desktop/Gonza/
 ```
 
 ### 🍰 Vertical Slice Structure (Client & Admin)
+```text
 module(Sales, Inventory, Customers ...)/
 ├── controller          # 🎮 Route Handlers & Input Validation
 ├── model                # 🗄️ Database Schemas & Types
