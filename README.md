@@ -37,14 +37,20 @@ c:/Users/derri/Desktop/Gonza/
 ### 🍰 Vertical Slice Structure (Client & Admin)
 ```text
 module(Sales, Inventory, Customers ...)/
-├── controller          # 🎮 Route Handlers & Input Validation
-├── model                # 🗄️ Database Schemas & Types
-├── service              # 🧠 Business Logic & Data Access
+├── api/                  # 🧠 Backend Logic
+│   ├── controller.ts
+│   ├── model.ts
+│   └── service.ts
+│   └── index.ts          # 🚪 API Barrier
 │
-└── ui/                   # 🎨 Frontend Presentation
-    ├── components/       # React Components (e.g., SalesChart.tsx)
-    ├── hooks/            # Custom Hooks (e.g., useDailySales.ts)
-    └── pages/            # Page Views (e.g., SalesPage.tsx)
+├── ui/                   # 🎨 Frontend Presentation
+│   ├── components/
+│   ├── hooks/
+│   └── pages/
+│   └── index.ts          # 🚪 UI Barrier
+│
+├── types.ts              # 📝 Shared Type Definitions
+└── index.ts              # 📦 Public Module Logic
 ```
 
 ---
