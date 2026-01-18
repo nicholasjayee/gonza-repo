@@ -1,13 +1,13 @@
-import { NextResponse } from 'next/server';
+'use server';
+
 import { CustomerService } from './service';
 
-export const CustomerController = {
-    async getCustomers() {
-        try {
-            const customers = await CustomerService.fetchCustomers();
-            return NextResponse.json(customers);
-        } catch (error) {
-            return NextResponse.json({ error: 'Failed to fetch customers' }, { status: 500 });
-        }
+export async function getCustomersAction() {
+    try {
+        const data = await CustomerService.getAll();
+        return { success: true, data };
+    } catch (error) {
+        console.error("Failed to fetch customers:", error);
+        return { success: false, error: 'Failed to fetch customers' };
     }
-};
+}

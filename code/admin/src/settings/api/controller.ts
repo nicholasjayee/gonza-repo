@@ -1,11 +1,12 @@
-import { NextResponse } from 'next/server';
+'use server';
 
-export const InventoryController = {
-    async getReport() {
-        return NextResponse.json({
-            totalValue: 15400.50,
-            lowStockItems: 5,
-            outOfStock: 2
-        });
+import { AdminSettingService } from './service';
+
+export async function getSystemConfigAction() {
+    try {
+        const data = await AdminSettingService.getSystemConfig();
+        return { success: true, data };
+    } catch (error) {
+        return { success: false, error: 'Failed' };
     }
-};
+}

@@ -1,14 +1,13 @@
-export const InventoryService = {
-    async fetchItems() {
-        return [
-            { id: '1', name: 'Premium Widget', stock: 124, price: 45.99 },
-            { id: '2', name: 'Elite Gadget', stock: 8, price: 120.00 },
-            { id: '3', name: 'Standard Tool', stock: 540, price: 12.50 }
-        ];
-    },
+import { db } from '@gonza/shared/infra/db';
+import { InventoryItem } from '../types';
 
-    async updateStock(id: string, count: number) {
-        console.log(`Inventory Update: ${id} set to ${count}`);
-        return { id, stock: count };
+export class InventoryService {
+    static async getAll(): Promise<InventoryItem[]> {
+        // return db.inventory.findMany();
+        return [];
     }
-};
+
+    static async updateStock(id: string, quantity: number) {
+        // return db.inventory.update({ where: { id }, data: { stock: quantity } });
+    }
+}

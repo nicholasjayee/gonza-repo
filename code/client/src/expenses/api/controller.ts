@@ -1,9 +1,12 @@
-import { NextResponse } from 'next/server';
+'use server';
+
 import { ExpenseService } from './service';
 
-export const ExpenseController = {
-    async getExpenses() {
-        const expenses = await ExpenseService.fetchExpenses();
-        return NextResponse.json(expenses);
+export async function getExpensesAction() {
+    try {
+        const data = await ExpenseService.getAll();
+        return { success: true, data };
+    } catch (error) {
+        return { success: false, error: 'Failed' };
     }
-};
+}

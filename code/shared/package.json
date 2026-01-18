@@ -1,0 +1,22 @@
+{
+    "name": "@gonza/shared",
+    "version": "1.0.0",
+    "main": "index.ts",
+    "files": [
+        "infra"
+    ],
+    "scripts": {
+        "db:generate": "npx prisma generate --schema=./infra/schema.prisma",
+        "db:push": "npx prisma db push --schema=./infra/schema.prisma"
+    },
+    "dependencies": {
+        "@prisma/client": "^7.2.0"
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2",
+        "dotenv-cli": "^11.0.0",
+        "isexe": "^3.1.1",
+        "prisma": "^7.2.0",
+        "which": "^6.0.0"
+    }
+}

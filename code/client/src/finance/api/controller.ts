@@ -1,13 +1,12 @@
-import { NextResponse } from 'next/server';
+'use server';
+
 import { FinanceService } from './service';
 
-export const FinanceController = {
-    async getAccounts() {
-        const accounts = await FinanceService.fetchAccounts();
-        return NextResponse.json(accounts);
-    },
-    async getPnL(period: string) {
-        const pnl = await FinanceService.getPnL(period);
-        return NextResponse.json(pnl);
+export async function getTransactionsAction() {
+    try {
+        const data = await FinanceService.getAll();
+        return { success: true, data };
+    } catch (error) {
+        return { success: false, error: 'Failed' };
     }
-};
+}

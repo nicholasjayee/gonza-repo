@@ -1,8 +1,14 @@
-export const CustomerService = {
-    async fetchCustomers() {
-        return [
-            { id: '1', name: 'Alice', email: 'alice@example.com' },
-            { id: '2', name: 'Bob', email: 'bob@example.com' }
-        ];
+import { db } from '@gonza/shared/infra/db';
+import { Customer } from '../types';
+
+export class CustomerService {
+    static async getAll(): Promise<Customer[]> {
+        // return db.customer.findMany();
+        return [];
     }
-};
+
+    static async getById(id: string): Promise<Customer | null> {
+        // return db.customer.findUnique({ where: { id } });
+        return null;
+    }
+}

@@ -1,13 +1,12 @@
-import { NextResponse } from 'next/server';
+'use server';
+
 import { BranchService } from './service';
 
-export const BranchController = {
-    async getBranches() {
-        const branches = await BranchService.fetchBranches();
-        return NextResponse.json(branches);
-    },
-    async getEmployees(branchId: string) {
-        const employees = await BranchService.fetchEmployees(branchId);
-        return NextResponse.json(employees);
+export async function getBranchesAction() {
+    try {
+        const data = await BranchService.getAll();
+        return { success: true, data };
+    } catch (error) {
+        return { success: false, error: 'Failed to fetch branches' };
     }
-};
+}

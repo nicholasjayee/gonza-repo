@@ -1,9 +1,12 @@
-import { NextResponse } from 'next/server';
+'use server';
+
 import { SupportService } from './service';
 
-export const SupportController = {
-    async getDocs() {
-        const docs = await SupportService.fetchDocs();
-        return NextResponse.json(docs);
+export async function getTicketsAction() {
+    try {
+        const data = await SupportService.getAll();
+        return { success: true, data };
+    } catch (error) {
+        return { success: false, error: 'Failed' };
     }
-};
+}

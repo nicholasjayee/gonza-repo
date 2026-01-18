@@ -108,7 +108,19 @@ Assuming Node.js v18+ is installed:
 npm install
 ```
 
-### 2. Running Locally
+### 2. Database Setup
+
+Initialize the shared database schema and generate the Prisma client:
+
+```bash
+# Generate the Prisma client
+npm run db:generate
+
+# Push schema changes to the database
+npm run db:push
+```
+
+### 3. Running Locally
 Launch the entire ecosystem with one command:
 
 ```bash

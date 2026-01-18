@@ -1,11 +1,21 @@
-import { NextResponse } from 'next/server';
+'use server';
 
-export const SessionController = {
-    async login(credentials: any) {
-        console.log('Login attempt:', credentials);
-        return NextResponse.json({ success: true, token: 'mock-jwt-token' });
-    },
-    async logout() {
-        return NextResponse.json({ success: true });
+import { SessionService } from './service';
+
+export async function loginAction(formData: FormData) {
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    const user = await SessionService.validateCredentials(email, password);
+    if (!user) {
+        return { success: false, error: 'Invalid email or password' };
     }
-};
+
+    const session = await SessionService.createSession(user.id);
+    return { success: true, token: session.token };
+}
+
+export async function signupAction(formData: FormData) {
+    // Process signup
+    return { success: true };
+}

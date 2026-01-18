@@ -1,11 +1,9 @@
-export const ExpenseService = {
-    async fetchExpenses() {
-        return [
-            { id: '1', category: 'Rent', amount: 50000, date: '2026-01-10' },
-            { id: '2', category: 'Utilities', amount: 15000, date: '2026-01-15' }
-        ];
-    },
-    async addExpense(data: any) {
-        return { id: Math.random().toString(), ...data };
+import { db } from '@gonza/shared/infra/db';
+import { Expense } from '../types';
+
+export class ExpenseService {
+    static async getAll(): Promise<Expense[]> {
+        // return db.expense.findMany();
+        return [];
     }
-};
+}

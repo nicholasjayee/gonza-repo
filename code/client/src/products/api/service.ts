@@ -1,11 +1,14 @@
-export const ProductService = {
-    async fetchProducts() {
-        return [
-            { id: '1', name: 'Product A', category: 'Hardware', price: 1500, cost: 1000 },
-            { id: '2', name: 'Product B', category: 'Software', price: 2500, cost: 1500 }
-        ];
-    },
-    async createProduct(data: any) {
-        return { id: Math.random().toString(), ...data };
+import { db } from '@gonza/shared/infra/db';
+import { Product } from '../types';
+
+export class ProductService {
+    static async getAll(): Promise<Product[]> {
+        // return db.product.findMany();
+        return [];
     }
-};
+
+    static async getById(id: string): Promise<Product | null> {
+        // return db.product.findUnique({ where: { id } });
+        return null;
+    }
+}

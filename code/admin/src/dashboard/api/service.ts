@@ -1,10 +1,11 @@
-export const AdminDashboardService = {
-    async getGlobalMetrics() {
+import { db } from '@gonza/shared/infra/db';
+
+export class AdminDashboardService {
+    static async getSystemStats() {
         return {
-            totalRevenue: 154000000,
-            activeBranches: 5,
-            totalEmployees: 42,
-            systemHealth: 'Optimal'
+            totalUsers: 0,
+            cpuUsage: '12%',
+            memoryUsage: '45%'
         };
     }
-};
+}

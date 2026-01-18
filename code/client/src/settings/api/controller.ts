@@ -1,9 +1,12 @@
-import { NextResponse } from 'next/server';
+'use server';
+
 import { SettingService } from './service';
 
-export const SettingController = {
-    async getRoles() {
-        const roles = await SettingService.fetchRoles();
-        return NextResponse.json(roles);
+export async function getSettingsAction() {
+    try {
+        const data = await SettingService.getSettings();
+        return { success: true, data };
+    } catch (error) {
+        return { success: false, error: 'Failed' };
     }
-};
+}

@@ -1,8 +1,9 @@
-export const SupportService = {
-    async fetchDocs() {
-        return [
-            { id: '1', title: 'Getting Started', content: 'Welcome to Gonza System...' },
-            { id: '2', title: 'Managing Sales', content: 'To create a sale, go to...' }
-        ];
+import { db } from '@gonza/shared/infra/db';
+import { Ticket } from '../types';
+
+export class SupportService {
+    static async getAll(): Promise<Ticket[]> {
+        // return db.ticket.findMany();
+        return [];
     }
-};
+}

@@ -1,8 +1,12 @@
-export const AdminAnalyticsService = {
-    async getPerformanceReport() {
-        return [
-            { branch: 'Main', sales: 450000, growth: '+12%' },
-            { branch: 'West', sales: 120000, growth: '-5%' }
-        ];
+import { db } from '@gonza/shared/infra/db';
+
+export class AnalyticsService {
+    static async getGlobalMetrics() {
+        // Aggregated data from all modules
+        return {
+            totalRevenue: 0,
+            activeUsers: 0,
+            systemHealth: 'OK'
+        };
     }
-};
+}

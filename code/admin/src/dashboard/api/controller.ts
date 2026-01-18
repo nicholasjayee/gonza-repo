@@ -1,9 +1,12 @@
-import { NextResponse } from 'next/server';
+'use server';
+
 import { AdminDashboardService } from './service';
 
-export const AdminDashboardController = {
-    async getOverview() {
-        const metrics = await AdminDashboardService.getGlobalMetrics();
-        return NextResponse.json(metrics);
+export async function getSystemStatsAction() {
+    try {
+        const data = await AdminDashboardService.getSystemStats();
+        return { success: true, data };
+    } catch (error) {
+        return { success: false, error: 'Failed' };
     }
-};
+}

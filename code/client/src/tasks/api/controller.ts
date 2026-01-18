@@ -1,9 +1,12 @@
-import { NextResponse } from 'next/server';
+'use server';
+
 import { TaskService } from './service';
 
-export const TaskController = {
-    async getTasks() {
-        const tasks = await TaskService.fetchTasks();
-        return NextResponse.json(tasks);
+export async function getTasksAction() {
+    try {
+        const data = await TaskService.getAll();
+        return { success: true, data };
+    } catch (error) {
+        return { success: false, error: 'Failed' };
     }
-};
+}
