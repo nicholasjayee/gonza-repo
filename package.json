@@ -1,0 +1,29 @@
+{
+    "name": "gonza-workspace",
+    "version": "1.0.0",
+    "private": true,
+    "workspaces": [
+        "code/client",
+        "code/admin",
+        "code/auth",
+        "code/website",
+        "code/shared/config",
+        "code/shared/infra",
+        "code/shared/utils",
+        "code/shared/middleware"
+    ],
+    "scripts": {
+        "dev": "concurrently -n \"WEB,AUTH,CLIENT,ADMIN\" -c \"bgYellow.bold,bgMagenta.bold,bgBlue.bold,bgCyan.bold\" \"npm run dev:website\" \"npm run dev:auth\" \"npm run dev:client\" \"npm run dev:admin\"",
+        "dev:website": "cd code/website && npm run dev -- -p 3000",
+        "dev:auth": "cd code/auth && npm run dev -- -p 3001",
+        "dev:client": "cd code/client && npm run dev -- -p 3002",
+        "dev:admin": "cd code/admin && npm run dev -- -p 3003",
+        "install:all": "npm install"
+    },
+    "devDependencies": {
+        "autoprefixer": "^10.4.23",
+        "concurrently": "^8.2.2",
+        "postcss": "^8.5.6",
+        "tailwindcss": "^4.1.18"
+    }
+}
