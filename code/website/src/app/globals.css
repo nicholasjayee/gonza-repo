@@ -63,4 +63,44 @@ body {
   .gradient-text {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-indigo-600;
   }
+
+  .perspective-2000 {
+    perspective: 2000px;
+  }
+
+  .rotate-x-1 {
+    transform: rotateX(1deg);
+  }
+}
+
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-20px);
+  }
 }

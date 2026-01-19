@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   description: "Manage your campaigns and business operations.",
 };
 
+import { SidebarProvider } from "@/shared/components/Sidebar";
+import { ThemeProvider } from "@/shared/components/ThemeToggle";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -16,15 +19,19 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="antialiased font-sans" suppressHydrationWarning>
-        <div className="flex min-h-screen">
-          <Sidebar />
-          <div className="flex-1 flex flex-col ml-56">
-            <Topbar />
-            <main className="p-8">
-              {children}
-            </main>
-          </div>
-        </div>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <SidebarProvider>
+            <div className="flex min-h-screen">
+              <Sidebar />
+              <div className="flex-1 flex flex-col min-w-0 lg:ml-56">
+                <Topbar />
+                <main className="p-4 md:p-6 lg:p-8">
+                  {children}
+                </main>
+              </div>
+            </div>
+          </SidebarProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

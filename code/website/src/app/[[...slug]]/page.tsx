@@ -1,4 +1,6 @@
-import { HomePage, PolicyPage, TermsPage } from "@/showcase/ui";
+import HomePage from "@/showcase/ui/pages/HomePage";
+import PolicyPage from "@/showcase/ui/pages/PolicyPage";
+import TermsPage from "@/showcase/ui/pages/TermsPage";
 import { use } from "react";
 import { Metadata } from "next";
 
