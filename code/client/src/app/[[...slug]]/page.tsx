@@ -78,7 +78,7 @@ const routes: Record<string, React.ComponentType> = {
     'branches': BranchesPage,
     'support': SupportPage,
     'settings': SettingsPage,
-};
+};  
 
 // Dynamic SEO Metadata Generator
 export async function generateMetadata({ params }: { params: Promise<{ slug?: string[] }> }): Promise<Metadata> {

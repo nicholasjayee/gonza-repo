@@ -1,4 +1,4 @@
-import { db } from '@gonza/shared/infra/db';
+import { db } from '@gonza/shared/prisma/db';
 
 export class AdminSettingService {
     static async getSystemConfig() {

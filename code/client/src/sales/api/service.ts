@@ -1,4 +1,4 @@
-import { db } from '@gonza/shared/infra/db';
+import { db } from '@gonza/shared/prisma/db';
 import { Sale } from '../types';
 
 export class SalesService {

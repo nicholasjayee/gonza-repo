@@ -10,7 +10,7 @@
         "code/shared"
     ],
     "scripts": {
-        "dev": "concurrently -n \"WEB,AUTH,CLIENT,ADMIN\" -c \"bgYellow.bold,bgMagenta.bold,bgBlue.bold,bgCyan.bold\" \"npm run dev:website\" \"npm run dev:auth\" \"npm run dev:client\" \"npm run dev:admin\"",
+        "dev": "dotenv -e code/shared/.env -- concurrently -n \"WEB,AUTH,CLIENT,ADMIN\" -c \"bgYellow.bold,bgMagenta.bold,bgBlue.bold,bgCyan.bold\" \"npm run dev:website\" \"npm run dev:auth\" \"npm run dev:client\" \"npm run dev:admin\"",
         "dev:website": "cd code/website && npm run dev -- -p 3000",
         "dev:auth": "cd code/auth && npm run dev -- -p 3001",
         "dev:client": "cd code/client && npm run dev -- -p 3002",

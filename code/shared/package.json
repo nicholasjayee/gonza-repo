@@ -3,11 +3,11 @@
     "version": "1.0.0",
     "main": "index.ts",
     "files": [
-        "infra"
+        "prisma"
     ],
     "scripts": {
-        "db:generate": "npx prisma generate --schema=./infra/schema.prisma",
-        "db:push": "npx prisma db push --schema=./infra/schema.prisma"
+        "db:generate": "npx prisma generate --schema=./prisma/schema.prisma",
+        "db:push": "npx prisma db push --schema=./prisma/schema.prisma"
     },
     "dependencies": {
         "@prisma/client": "^7.2.0"
