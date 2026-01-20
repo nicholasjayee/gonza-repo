@@ -19,6 +19,7 @@
         "db:generate": "npm run db:generate -w @gonza/shared",
         "db:push": "npm run db:push -w @gonza/shared"
     },
+    
     "devDependencies": {
         "concurrently": "^8.2.2",
         "dotenv-cli": "^11.0.0"

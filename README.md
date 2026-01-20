@@ -53,6 +53,49 @@ module(Sales, Inventory, Customers ...)/
 └── index.ts              # 📦 Public Module Logic
 ```
 
+
+---
+
+## 🧠 API Architecture: Controller vs Service
+
+We separate **"How the App Talks"** (Controller) from **"What the App Does"** (Service).
+
+### 1. `controller.ts` (The Receptionist)
+*   **Role**: Entry Point & Security.
+*   **Technology**: Server Actions (`use server`).
+*   **Job**: Unpacks `FormData`, validates input, calls the Service, and handles errors.
+
+```typescript
+// src/products/api/controller.ts
+export async function createProductAction(formData: FormData) {
+    // 1. Unpack Request
+    const name = formData.get('name') as string;
+    const price = parseFloat(formData.get('price') as string);
+
+    // 2. Call the Chef (Service)
+    await ProductService.create({ name, price });
+
+    // 3. Return Response
+    return { success: true };
+}
+```
+
+### 2. `service.ts` (The Chef)
+*   **Role**: Business Logic & Database Access.
+*   **Technology**: Pure TypeScript & Prisma.
+*   **Job**: Talks to the Database. It doesn't know about UI or Forms.
+
+```typescript
+// src/products/api/service.ts
+import { db } from '@gonza/shared/prisma/db';
+
+export class ProductService {
+    static async create(data: { name: string; price: number }) {
+        return db.product.create({ data });
+    }
+}
+```
+
 ---
 
 ## 🧭 Lean Routing Architecture
