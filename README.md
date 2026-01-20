@@ -156,6 +156,23 @@ Since `code/website`, `code/auth`, `code/client`, and `code/admin` are distinct 
 
 ---
 
+## 🧱 Shared Architecture
+
+The `code/shared` directory functions as an **Internal Source Library**, not a standalone package.
+It is consumed by the 4 applications via **TypeScript Path Aliases**.
+
+```json
+// tsconfig.json (in each app)
+"@gonza/shared/*": ["../shared/*"]
+```
+
+### How it works at Build Time
+*   The `shared` folder is **NOT** deployed directly.
+*   When you build `website` or `client`, the compiler (Next.js) follows the `@gonza/shared` imports and **compiles those files directly into the application's bundle**.
+*   This ensures that `code/shared` code runs natively within the execution context of the consuming app.
+
+---
+
 ## 🛠️ Technology Stack
 
 *   **Framework**: Next.js 16 (App Router)
