@@ -1,7 +1,7 @@
-import LoginPage from "@/sessions/ui/pages/LoginPage";
-import SignupPage from "@/sessions/ui/pages/SignupPage";
-import ForgotPasswordPage from "@/sessions/ui/pages/ForgotPasswordPage";
-import ResetPasswordPage from "@/sessions/ui/pages/ResetPasswordPage";
+import LoginPage from "@/auth/ui/pages/LoginPage";
+import SignupPage from "@/auth/ui/pages/SignupPage";
+import ForgotPasswordPage from "@/auth/ui/pages/ForgotPasswordPage";
+import ResetPasswordPage from "@/auth/ui/pages/ResetPasswordPage";
 import { use } from "react";
 import { Metadata } from "next";
 

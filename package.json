@@ -15,11 +15,10 @@
         "dev:auth": "cd code/auth && npm run dev -- -p 3001",
         "dev:client": "cd code/client && npm run dev -- -p 3002",
         "dev:admin": "cd code/admin && npm run dev -- -p 3003",
-        "install:all": "npm install",
-        "db:generate": "npm run db:generate -w @gonza/shared",
-        "db:push": "npm run db:push -w @gonza/shared"
+        "db:push": "cd code/shared && npx prisma db push",
+        "db:generate": "cd code/shared && npx prisma generate",
+        "db:seed": "cd code/shared && npx prisma db seed"
     },
-    
     "devDependencies": {
         "concurrently": "^8.2.2",
         "dotenv-cli": "^11.0.0"

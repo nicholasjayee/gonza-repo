@@ -5,7 +5,7 @@ import { env } from "@gonza/shared/config/env";
 import { ThemeToggle } from "./ThemeToggle";
 
 export const Navbar = () => (
-    <nav className="fixed top-0 z-50 w-full border-b border-white/5 bg-black/50 backdrop-blur-xl supports-[backdrop-filter]:bg-black/20">
+    <nav className="fixed top-0 z-50 w-full border-b border-white/5 bg-black/50 backdrop-blur-xl supports-[backdrop-filter]:bg-black/20" suppressHydrationWarning>
         <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-6">
             <div className="flex items-center gap-2.5 group cursor-pointer">
                 <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-b from-white/20 to-white/5 shadow-inner border border-white/10 overflow-hidden">

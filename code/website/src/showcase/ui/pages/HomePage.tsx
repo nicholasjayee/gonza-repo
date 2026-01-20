@@ -230,7 +230,7 @@ const Quote = () => (
 
 const HomePage = () => {
     return (
-        <div className="min-h-screen bg-black text-white selection:bg-primary/30 font-sans">
+        <div className="min-h-screen bg-black text-white selection:bg-primary/30 font-sans" suppressHydrationWarning>
             <Navbar />
             <Hero />
             <Clients />

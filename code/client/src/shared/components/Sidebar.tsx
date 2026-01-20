@@ -73,6 +73,35 @@ const NavItem = ({ href, icon, label, badge, active }: { href: string; icon: Rea
 export const Sidebar: React.FC = () => {
     const pathname = usePathname();
     const { isOpen, close } = useSidebar();
+    const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+        const userDataStr = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('userData='))
+            ?.split('=')[1];
+
+        if (userDataStr) {
+            try {
+                const decodedData = decodeURIComponent(userDataStr);
+                setUser(JSON.parse(decodedData));
+            } catch (error) {
+                console.error('Error parsing userData cookie:', error);
+            }
+        }
+    }, []);
+
+    const getInitials = (name: string) => {
+        return name
+            .split(' ')
+            .filter(Boolean)
+            .map(n => n[0])
+            .join('')
+            .toUpperCase()
+            .substring(0, 2);
+    };
 
     return (
         <>
@@ -120,10 +149,25 @@ export const Sidebar: React.FC = () => {
 
                 <div className="p-3 bg-muted/20 border-t border-border">
                     <div className="flex items-center gap-2.5 px-2 py-1">
-                        <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">JD</div>
-                        <div className="flex-1 overflow-hidden">
-                            <p className="text-[11px] font-bold truncate text-foreground">John Doe</p>
-                            <p className="text-[9px] text-muted-foreground truncate">john@example.com</p>
+                        <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">
+                            {mounted && user ? (
+                                getInitials(user.name)
+                            ) : (
+                                <div className="w-3.5 h-3.5 bg-primary/30 rounded-full animate-pulse" />
+                            )}
+                        </div>
+                        <div className="flex-1 overflow-hidden text-left">
+                            {mounted && user ? (
+                                <>
+                                    <p className="text-[11px] font-bold truncate text-foreground">{user.name}</p>
+                                    <p className="text-[9px] text-muted-foreground truncate">{user.email}</p>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="h-2.5 w-16 bg-muted rounded animate-pulse mb-1" />
+                                    <div className="h-2 w-20 bg-muted rounded animate-pulse" />
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
