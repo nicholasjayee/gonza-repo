@@ -138,6 +138,24 @@ npm run build --prefix code/client
 
 ---
 
+## ☁️ Deployment & Infrastructure
+
+The Gonza monorepo is architected for **Atomic Deployments**. Each application in `code/` is a standalone Next.js instance that can be deployed independently.
+
+### Recommended Strategy (Vercel / Netlify)
+Since `code/website`, `code/auth`, `code/client`, and `code/admin` are distinct Next.js apps, they should be deployed as **4 separate projects** connected to the same Git repository.
+
+| Application | Root Directory | Framework Preset | Build Command |
+|-------------|----------------|------------------|---------------|
+| **Website** | `code/website` | Next.js | `cd code/website && npm run build` |
+| **Auth** | `code/auth` | Next.js | `cd code/auth && npm run build` |
+| **Client** | `code/client` | Next.js | `cd code/client && npm run build` |
+| **Admin** | `code/admin` | Next.js | `cd code/admin && npm run build` |
+
+> **💡 Pro Tip:** Ensure all 4 projects share the same critical Environment Variables (e.g. `DATABASE_URL`) in your deployment dashboard.
+
+---
+
 ## 🛠️ Technology Stack
 
 *   **Framework**: Next.js 16 (App Router)
