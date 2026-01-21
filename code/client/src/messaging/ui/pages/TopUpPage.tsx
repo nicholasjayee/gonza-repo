@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { initiateTopUpAction, getCreditBalanceAction } from '../../api/controller';
-import { PaymentPoller } from '../../../lib/payment-poller';
+import { PaymentPoller } from '../../api/payment-poller';
 
 export default function TopUpPage() {
     const [balance, setBalance] = useState<number | null>(null);

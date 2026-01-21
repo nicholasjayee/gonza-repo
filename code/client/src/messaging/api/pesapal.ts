@@ -13,7 +13,7 @@ export class PesaPalService {
      */
     private static async safeJson(response: Response, logPrefix: string) {
         const text = await response.text();
-        console.log(`${logPrefix} Raw Response:`, text || '[Empty Body]');
+
 
         if (!response.ok) {
             console.error(`${logPrefix} HTTP Error ${response.status}:`, text);
@@ -35,13 +35,12 @@ export class PesaPalService {
      * Get Authentication Token from PesaPal (with caching)
      */
     private static async getAuthToken() {
+
         if (cachedToken && tokenExpiry && Date.now() < tokenExpiry) {
-            console.log('[PesaPal Service] Using cached token');
             return cachedToken;
         }
 
         const tokenUrl = `${PESAPAL_URL}/api/Auth/RequestToken`;
-        console.log('[PesaPal Service] Requesting new token from:', tokenUrl);
 
         let response;
         try {
@@ -89,7 +88,6 @@ export class PesaPalService {
         const callbackUrl = `${env.CLIENT_URL}/api/payments/pesapal-ipn`;
 
         const listUrl = `${PESAPAL_URL}/api/URLSetup/GetIpnList`;
-        console.log('[PesaPal Service] Fetching IPN list from:', listUrl);
         const listResponse = await fetch(listUrl, {
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -105,12 +103,11 @@ export class PesaPalService {
         }
 
         if (myIPN) {
-            console.log('[PesaPal Service] Found active IPN:', myIPN.ipn_id);
+
             return myIPN.ipn_id;
         }
 
         const regUrl = `${PESAPAL_URL}/api/URLSetup/RegisterIPN`;
-        console.log('[PesaPal Service] Registering new IPN at:', regUrl);
         const regResponse = await fetch(regUrl, {
             method: 'POST',
             headers: {
@@ -143,7 +140,7 @@ export class PesaPalService {
         name: string,
         phoneNumber: string
     }) {
-        console.log('[PesaPal Service] initiatePayment started for user:', data.userId);
+
         const token = await this.getAuthToken();
         if (!token) throw new Error("Could not authenticate with PesaPal");
 
@@ -167,7 +164,7 @@ export class PesaPalService {
         };
 
         const orderUrl = `${PESAPAL_URL}/api/Transactions/SubmitOrderRequest`;
-        console.log('[PesaPal Service] Submitting order request to:', orderUrl);
+
         const response = await fetch(orderUrl, {
             method: 'POST',
             headers: {
@@ -205,7 +202,7 @@ export class PesaPalService {
      */
     static async getTransactionStatus(trackingId: string) {
         const token = await this.getAuthToken();
-        console.log('[PesaPal Service] Checking status for:', trackingId);
+
         const url = `${PESAPAL_URL}/api/Transactions/GetTransactionStatus?orderTrackingId=${trackingId}`;
         const response = await fetch(url, {
             headers: {

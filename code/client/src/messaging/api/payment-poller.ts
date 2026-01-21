@@ -12,11 +12,8 @@ export const PaymentPoller = {
      */
     start() {
         if (pollingInterval) {
-            console.log('[Payment Poller] Already running');
             return;
         }
-
-        console.log('[Payment Poller] Starting...');
 
         // Poll immediately
         this.checkNow();
@@ -34,7 +31,6 @@ export const PaymentPoller = {
         if (pollingInterval) {
             clearInterval(pollingInterval);
             pollingInterval = null;
-            console.log('[Payment Poller] Stopped');
         }
     },
 
@@ -49,11 +45,10 @@ export const PaymentPoller = {
             });
 
             const data = await response.json();
-            console.log('[Payment Poller] Check completed:', data);
 
             return data;
         } catch (error) {
-            console.error('[Payment Poller] Error:', error);
+            // Silently fail or track error internally if needed
         }
     }
 };

@@ -11,7 +11,7 @@ export const maxDuration = 60; // Max 60 seconds for this endpoint
  * even if the user closes the browser
  */
 export async function GET() {
-    console.log('[Payment Poller] Starting transaction status check...');
+
 
     try {
         // Find all pending transactions created in the last 24 hours
@@ -34,18 +34,19 @@ export async function GET() {
             }
         });
 
-        console.log(`[Payment Poller] Found ${pendingTransactions.length} pending transactions`);
+
 
         const results = [];
 
         for (const transaction of pendingTransactions) {
             try {
+                if (!transaction.pesapalOrderTrackingId) continue;
                 // Check status with PesaPal
                 const statusResult = await PesaPalService.getTransactionStatus(
                     transaction.pesapalOrderTrackingId
                 );
 
-                console.log(`[Payment Poller] Transaction ${transaction.pesapalMerchantReference}:`, statusResult);
+
 
                 const newStatus = statusResult.status_code === 1 ? 'completed' :
                     statusResult.status_code === 3 ? 'failed' : 'pending';
@@ -68,15 +69,14 @@ export async function GET() {
                             }
                         });
 
-                        console.log(`[Payment Poller] ✅ Awarded ${creditsToAward} credits to user ${transaction.userId}`);
+
 
                         results.push({
                             reference: transaction.pesapalMerchantReference,
                             status: 'completed',
                             creditsAwarded: creditsToAward
                         });
-                    } else {
-                        console.log(`[Payment Poller] ❌ Transaction ${transaction.pesapalMerchantReference} failed`);
+
                         results.push({
                             reference: transaction.pesapalMerchantReference,
                             status: 'failed'
@@ -84,7 +84,7 @@ export async function GET() {
                     }
                 }
             } catch (err) {
-                console.error(`[Payment Poller] Error processing transaction ${transaction.pesapalMerchantReference}:`, err);
+                // Silently handle error
                 results.push({
                     reference: transaction.pesapalMerchantReference,
                     error: err instanceof Error ? err.message : 'Unknown error'
@@ -98,7 +98,6 @@ export async function GET() {
             results
         });
     } catch (error) {
-        console.error('[Payment Poller] Fatal error:', error);
         return NextResponse.json({
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error'

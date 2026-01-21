@@ -21,6 +21,6 @@ export class SalesService {
             }
         });
         */
-        console.log("Creating sale via Prisma...", data);
+
     }
 }
