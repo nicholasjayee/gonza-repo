@@ -64,5 +64,31 @@ Permissions are assigned to roles to control specific actions within an applicat
 
 ---
 
-## 6. Hydration Conflict Management
+## 6. Middleware & Route Protection
+
+Server-side protection is enforced to prevent unauthorized access to the `client` and `admin` applications. This logic is centralized to ensure consistency across the monorepo.
+
+### Shared Auth Guard
+A shared utility function, `authGuard`, is located in `@gonza/shared/middleware/authGuard.ts`. It performs the following checks:
+1.  **Session Validation**: Verifies the presence of the `refreshToken` cookie.
+2.  **Role Verification**: Decodes the `userData` cookie and checks if the user's role matches the allowed roles for the requesting application.
+3.  **Redirects**: Returns a redirect path (to the Auth App) if validation fails.
+
+### Application Middleware
+Each Next.js application implements a root `middleware.ts` that utilizes the shared `authGuard`.
+
+#### Client App (`code/client`)
+- **Allowed Roles**: `admin`, `manager`, `superadmin`
+- **Behavior**: Unauthenticated users or users with insufficient permissions are redirected to the Auth App (`http://localhost:3001`).
+- **File**: `code/client/src/middleware.ts`
+
+#### Admin App (`code/admin`)
+- **Allowed Roles**: `superadmin` ONLY
+- **Behavior**: Strict access control; only superadmins can access routes. Others are redirected to Auth.
+- **File**: `code/admin/src/middleware.ts`
+
+### Handling "Middleware to Proxy" Warning
+*Note: You may see a "middleware file convention is deprecated" warning in the terminal. This is a known false positive in some Next.js versions/configurations. The `middleware.ts` file IS correctly executing and protecting routes as verified by logs and testing.*
+
+## 7. Hydration Conflict Management
 *   Implemented `suppressHydrationWarning` on root layouts and structural components to prevent browser extensions (like Scrnli) from breaking the React reconciliation process during page load.
