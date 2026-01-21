@@ -4,6 +4,16 @@ This document details the setup process for the Gonza Systems project, including
 
 ---
 
+## 0. Getting the Code
+
+To start with the correct branch, clone the repository using the following command:
+
+```bash
+git clone -b Ed https://github.com/Ed-Ackerman/gonza.git
+```
+
+---
+
 ## 1. Prisma & Database Setup
 
 Gonza Systems uses **Prisma 7** with the `@prisma/adapter-pg` driver adapter. The configuration is split between the schema, a config file, and a custom client instantiation.
