@@ -13,21 +13,31 @@ export class PesaPalService {
      */
     private static async safeJson(response: Response, logPrefix: string) {
         const text = await response.text();
-
-
         if (!response.ok) {
             console.error(`${logPrefix} HTTP Error ${response.status}:`, text);
-            throw new Error(`PesaPal API Error: ${response.status}`);
+            throw new Error(`PesaPal API Error: ${response.status} - ${text.substring(0, 100)}`);
         }
-
         if (!text) return null;
-
         try {
             return JSON.parse(text);
         } catch (e) {
             console.error(`${logPrefix} JSON Parse Error:`, e);
-            console.error(`${logPrefix} Problematic Text:`, text);
-            throw new Error("Invalid response from PesaPal. Check server logs.");
+            throw new Error("Invalid response from PesaPal.");
+        }
+    }
+
+    /**
+     * Centralized fetch with error logging
+     */
+    private static async safeFetch(url: string, options: RequestInit, logPrefix: string) {
+        try {
+            console.log(`${logPrefix} Requesting: ${options.method || 'GET'} ${url}`);
+            const response = await fetch(url, options);
+            return response;
+        } catch (err: any) {
+            console.error(`${logPrefix} Fetch Failure:`, err.message);
+            if (err.cause) console.error(`${logPrefix} Cause:`, err.cause);
+            throw new Error(`Network failure to PesaPal: ${err.message}`);
         }
     }
 
@@ -35,49 +45,30 @@ export class PesaPalService {
      * Get Authentication Token from PesaPal (with caching)
      */
     private static async getAuthToken() {
-
         if (cachedToken && tokenExpiry && Date.now() < tokenExpiry) {
             return cachedToken;
         }
 
         const tokenUrl = `${PESAPAL_URL}/api/Auth/RequestToken`;
-
-        let response;
-        try {
-            response = await fetch(tokenUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({
-                    consumer_key: env.PESAPAL_CONSUMER_KEY,
-                    consumer_secret: env.PESAPAL_CONSUMER_SECRET
-                })
-            });
-        } catch (fetchErr: any) {
-            console.error('[PesaPal Service] Network Fetch Failed:', fetchErr.message);
-            console.error('[PesaPal Service] Fetch Cause:', fetchErr.cause);
-            console.error('[PesaPal Service] Fetch Stack:', fetchErr.stack);
-            throw new Error(`Network connection to PesaPal failed: ${fetchErr.message}`);
-        }
+        const response = await this.safeFetch(tokenUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                consumer_key: env.PESAPAL_CONSUMER_KEY,
+                consumer_secret: env.PESAPAL_CONSUMER_SECRET
+            })
+        }, '[PesaPal Auth]');
 
         const result = await this.safeJson(response, '[PesaPal Auth]');
-
-        if (!result) {
-            throw new Error("PesaPal returned an empty authentication response. Double check your PESAPAL_BASE_URL and credentials.");
-        }
-
-        if (result.error) throw new Error(`PesaPal Auth Error: ${result.error.message || 'Unknown error'}`);
-
-        if (!result.token) {
-            console.error('[PesaPal Auth] Success status but no token in response:', result);
-            throw new Error("PesaPal response succeeded but didn't contain an auth token.");
+        if (!result || !result.token) {
+            throw new Error("PesaPal authentication failed or returned no token.");
         }
 
         cachedToken = result.token;
         tokenExpiry = Date.now() + 4 * 60 * 1000;
-
         return cachedToken;
     }
 
@@ -86,14 +77,14 @@ export class PesaPalService {
      */
     private static async getIpnId(token: string) {
         const callbackUrl = `${env.CLIENT_URL}/api/payments/pesapal-ipn`;
-
         const listUrl = `${PESAPAL_URL}/api/URLSetup/GetIpnList`;
-        const listResponse = await fetch(listUrl, {
+
+        const listResponse = await this.safeFetch(listUrl, {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Accept': 'application/json'
             }
-        });
+        }, '[PesaPal IPN List]');
 
         const ipns = await this.safeJson(listResponse, '[PesaPal IPN List]');
 
@@ -102,13 +93,10 @@ export class PesaPalService {
             myIPN = ipns.find((i: any) => i.url === callbackUrl && i.ipn_status === 1);
         }
 
-        if (myIPN) {
-
-            return myIPN.ipn_id;
-        }
+        if (myIPN) return myIPN.ipn_id;
 
         const regUrl = `${PESAPAL_URL}/api/URLSetup/RegisterIPN`;
-        const regResponse = await fetch(regUrl, {
+        const regResponse = await this.safeFetch(regUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -119,11 +107,11 @@ export class PesaPalService {
                 url: callbackUrl,
                 ipn_notification_type: 'POST'
             })
-        });
+        }, '[PesaPal IPN Reg]');
 
         const regResult = await this.safeJson(regResponse, '[PesaPal IPN Reg]');
-        if (!regResult || !regResult.ipn_id || regResult.error) {
-            throw new Error(`PesaPal IPN Registration Error: ${regResult?.error?.message || 'Unknown error'}`);
+        if (!regResult || !regResult.ipn_id) {
+            throw new Error("PesaPal IPN Registration failed.");
         }
 
         return regResult.ipn_id;
@@ -140,13 +128,8 @@ export class PesaPalService {
         name: string,
         phoneNumber: string
     }) {
-
         const token = await this.getAuthToken();
-        if (!token) throw new Error("Could not authenticate with PesaPal");
-
         const ipnId = await this.getIpnId(token);
-        if (!ipnId) throw new Error("Could not register or find a valid IPN ID");
-
         const merchantReference = `TOPUP-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
         const body = {
@@ -154,7 +137,7 @@ export class PesaPalService {
             currency: "UGX",
             amount: data.amount,
             description: data.description,
-            callback_url: `${env.CLIENT_URL}/messaging?tab=history`,
+            callback_url: `${env.CLIENT_URL}/api/payments/pesapal-callback`,
             notification_id: ipnId,
             billing_address: {
                 email_address: data.email,
@@ -164,8 +147,7 @@ export class PesaPalService {
         };
 
         const orderUrl = `${PESAPAL_URL}/api/Transactions/SubmitOrderRequest`;
-
-        const response = await fetch(orderUrl, {
+        const response = await this.safeFetch(orderUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -173,11 +155,12 @@ export class PesaPalService {
                 'Accept': 'application/json'
             },
             body: JSON.stringify(body)
-        });
+        }, '[PesaPal Order]');
 
         const result = await this.safeJson(response, '[PesaPal Order]');
-        if (!result) throw new Error("PesaPal returned an empty order response.");
-        if (result.error) throw new Error(`PesaPal Order Error: ${result.error.message || 'Failed to submit order'}`);
+        if (!result || !result.order_tracking_id) {
+            throw new Error("PesaPal Order submission failed.");
+        }
 
         await db.transaction.create({
             data: {
@@ -202,15 +185,102 @@ export class PesaPalService {
      */
     static async getTransactionStatus(trackingId: string) {
         const token = await this.getAuthToken();
-
         const url = `${PESAPAL_URL}/api/Transactions/GetTransactionStatus?orderTrackingId=${trackingId}`;
-        const response = await fetch(url, {
+
+        const response = await this.safeFetch(url, {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Accept': 'application/json'
             }
-        });
+        }, '[PesaPal Status Check]');
 
         return await this.safeJson(response, '[PesaPal Status Check]');
+    }
+
+    /**
+     * Polls PesaPal status until it reaches a final state (COMPLETED, FAILED, INVALID)
+     * or times out after 30 seconds.
+     */
+    static async waitForFinalStatus(trackingId: string, maxAttempts = 10, intervalMs = 3000) {
+        let attempts = 0;
+        let lastStatus = null;
+
+        while (attempts < maxAttempts) {
+            attempts++;
+            console.log(`[PesaPal Wait] Attempt ${attempts}/${maxAttempts} for ${trackingId}...`);
+
+            try {
+                const result = await this.getTransactionStatus(trackingId);
+                lastStatus = result;
+
+                const statusCode = result?.status_code || 0;
+                const statusStr = result?.status?.toUpperCase() || '';
+
+                if (['COMPLETED', 'FAILED', 'INVALID', 'CANCELLED', 'SUCCESS'].includes(statusStr)) {
+                    console.log(`[PesaPal Wait] Reached final state: ${statusStr}`);
+                    return result;
+                }
+
+                if (statusCode === 1 || statusCode === 2) {
+                    console.log(`[PesaPal Wait] Reached final state via code: ${statusCode}`);
+                    return result;
+                }
+            } catch (err) {
+                console.error(`[PesaPal Wait] Error on attempt ${attempts}:`, err);
+            }
+
+            if (attempts < maxAttempts) {
+                await new Promise(resolve => setTimeout(resolve, intervalMs));
+            }
+        }
+
+        console.warn(`[PesaPal Wait] Timed out waiting for ${trackingId}. Last status:`, lastStatus?.status);
+        return lastStatus;
+    }
+
+    /**
+     * Scans all pending transactions in the DB and syncs them with PesaPal.
+     * This is the "Watchdog" logic to recover from missed IPNs or abandoned callbacks.
+     */
+    static async syncAllPending() {
+        console.log('[PesaPal Watchdog] Starting global sync...');
+
+        // Find all transactions that are still 'pending'
+        const pending = await db.transaction.findMany({
+            where: { status: 'pending' },
+            take: 20 // Limit batch size
+        });
+
+        console.log(`[PesaPal Watchdog] Found ${pending.length} pending transactions.`);
+
+        const results = [];
+        for (const tx of pending) {
+            if (!tx.pesapalOrderTrackingId || !tx.pesapalMerchantReference) continue;
+
+            console.log(`[PesaPal Watchdog] Syncing: ${tx.pesapalMerchantReference}...`);
+            try {
+                const statusResult = await this.getTransactionStatus(tx.pesapalOrderTrackingId);
+
+                // Use PaymentService to award credits and update status
+                const { PaymentService } = await import('./payment-service');
+                const updateRes = await PaymentService.updateTransactionStatus(tx.pesapalMerchantReference, statusResult);
+
+                results.push({
+                    ref: tx.pesapalMerchantReference,
+                    status: updateRes.status,
+                    updated: true
+                });
+            } catch (err: any) {
+                console.error(`[PesaPal Watchdog] Failed to sync ${tx.pesapalMerchantReference}:`, err.message);
+                results.push({
+                    ref: tx.pesapalMerchantReference,
+                    error: err.message,
+                    updated: false
+                });
+            }
+        }
+
+        console.log('[PesaPal Watchdog] Global sync complete.');
+        return results;
     }
 }

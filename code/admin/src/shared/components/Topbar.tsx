@@ -64,6 +64,16 @@ export const Topbar: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-4">
+                <a
+                    href={process.env.NEXT_PUBLIC_CLIENT_URL || 'http://localhost:3000'}
+                    className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted hover:bg-muted/80 border border-border text-[11px] font-bold text-foreground transition-all group"
+                >
+                    <svg className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    Switch to Client
+                </a>
+
                 <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
                     <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
                     <span className="text-[10px] font-bold text-primary uppercase tracking-wider leading-none">Live Monitor</span>
@@ -78,6 +88,18 @@ export const Topbar: React.FC = () => {
 
                 <div className="h-8 w-px bg-border mx-2"></div>
                 <ThemeToggle />
+
+                <button
+                    onClick={() => window.location.reload()}
+                    className="h-10 px-3 flex items-center gap-2 rounded-xl hover:bg-muted transition-all active:scale-95 group"
+                    title="Full App Refresh"
+                >
+                    <svg className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors group-hover:rotate-180 duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span className="text-[10px] font-bold text-muted-foreground group-hover:text-primary uppercase tracking-wider hidden md:block">Refresh</span>
+                </button>
+
                 <div className="h-8 w-px bg-border mx-2"></div>
 
                 <div className="relative">

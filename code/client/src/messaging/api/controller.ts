@@ -1,10 +1,11 @@
 'use server';
 
-import { MessagingService } from './service';
+import { MessagingService, MessageTemplateService } from './service';
 import { StorageService } from './storage';
 import { PesaPalService } from './pesapal';
 import { db } from "@gonza/shared/prisma/db";
-import { MessageChannel } from '../types';
+import { MessageChannel, CreateTemplateInput } from '../types';
+import { serialize } from '@/shared/utils/serialize';
 
 /**
  * Action to send a single or bulk message
@@ -129,5 +130,58 @@ export async function getUploadUrlAction(fileName: string, contentType: string) 
         return { success: true, data: result };
     } catch (error: any) {
         return { success: false, error: error.message || 'Failed to generate upload URL' };
+    }
+}
+
+/**
+ * Message Template Actions
+ */
+export async function getTemplatesAction(userId: string) {
+    try {
+        const data = await MessageTemplateService.getAll(userId);
+        return { success: true, data: serialize(data) };
+    } catch (error) {
+        return { success: false, error: 'Failed to fetch templates' };
+    }
+}
+
+export async function createTemplateAction(userId: string, data: CreateTemplateInput) {
+    try {
+        const template = await MessageTemplateService.create(userId, data);
+        return { success: true, data: serialize(template) };
+    } catch (error) {
+        return { success: false, error: 'Failed to create template' };
+    }
+}
+
+export async function updateTemplateAction(id: string, data: Partial<CreateTemplateInput>) {
+    try {
+        const template = await MessageTemplateService.update(id, data);
+        return { success: true, data: serialize(template) };
+    } catch (error) {
+        return { success: false, error: 'Failed to update template' };
+    }
+}
+
+export async function deleteTemplateAction(id: string) {
+    try {
+        await MessageTemplateService.delete(id);
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: 'Failed to delete template' };
+    }
+}
+
+/**
+ * Action to manually trigger a sync of all pending payments
+ */
+export async function syncPaymentsAction() {
+    console.log('[Controller] syncPaymentsAction triggered');
+    try {
+        const results = await PesaPalService.syncAllPending();
+        return { success: true, data: results };
+    } catch (error: any) {
+        console.error('[Controller] syncPaymentsAction failed:', error);
+        return { success: false, error: 'Failed to sync payments' };
     }
 }

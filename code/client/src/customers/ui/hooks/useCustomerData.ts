@@ -1,27 +1,30 @@
 import { useState, useEffect } from 'react';
-import { Customer } from '../types';
+import { Customer } from '../../types';
+import { getCustomersAction } from '../../api/controller';
 
 export function useCustomerData() {
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const fetchCustomers = async () => {
-            try {
-                const response = await fetch('/api/customers');
-                if (!response.ok) throw new Error('Failed to fetch customers');
-                const data = await response.json();
-                setCustomers(data);
-            } catch (err: any) {
-                setError(err.message);
-            } finally {
-                setLoading(false);
+    const fetchCustomers = async () => {
+        try {
+            const res = await getCustomersAction();
+            if (res.success) {
+                setCustomers(res.data as any);
+            } else {
+                throw new Error(res.error || 'Failed to fetch customers');
             }
-        };
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchCustomers();
     }, []);
 
-    return { customers, loading, error };
+    return { customers, loading, error, refresh: fetchCustomers };
 }

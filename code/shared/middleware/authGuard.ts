@@ -1,7 +1,7 @@
 export function authGuard(
     req: { cookies: { get: (key: string) => { value: string } | undefined } },
     allowedRoles: string[]
-): { authorized: boolean; redirectPath?: string } {
+): { authorized: boolean; redirectPath?: string; user?: any } {
     // 1. Check for Refresh Token (Session)
     const refreshToken = req.cookies.get('refreshToken');
     if (!refreshToken) {
@@ -21,16 +21,24 @@ export function authGuard(
         const userData = JSON.parse(decodeURIComponent(userDataCookie.value));
         const userRole = userData.role || 'user';
 
-        if (!allowedRoles.includes(userRole)) {
-            // User is logged in but doesn't have permission
-            // Redirect to a "Forbidden" page or back to their likely home?
-            // For now, redirect to Auth which might redirect them back to their allowed app if smart,
-            // or just 403. Let's redirect to the Auth app root or login.
+        // 3. Check Role permissions
+        // superadmin is implicitly allowed if admin is allowed
+        const effectivelyAllowedRoles = allowedRoles.includes('admin')
+            ? [...allowedRoles, 'superadmin']
+            : allowedRoles;
+
+        if (!effectivelyAllowedRoles.includes(userRole)) {
             return { authorized: false, redirectPath: '/api/auth/login?error=unauthorized' };
         }
+
+        // 4. Check if account is active (default to true for backward compatibility)
+        if (userData.isActive === false) {
+            return { authorized: false, redirectPath: '/api/auth/login?error=frozen' };
+        }
+
+        return { authorized: true, user: userData };
     } catch (e) {
         return { authorized: false, redirectPath: '/api/auth/login' };
     }
-
-    return { authorized: true };
 }
+

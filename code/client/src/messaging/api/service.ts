@@ -1,10 +1,30 @@
 import { db } from '@gonza/shared/prisma/db';
 import { env } from '@gonza/shared/config/env';
-import { Message, MessageChannel, WhatsAppSession } from '../types';
+import { Message, MessageChannel, WhatsAppSession, MessageTemplate, CreateTemplateInput } from '../types';
 
 const EAZIREACH_BASE_URL = 'https://api.eazireach.com/api/v1';
 
 export class MessagingService {
+    /**
+     * Normalize phone numbers to EaziReach expected format (+256...)
+     */
+    private static normalizePhoneNumber(phone: string): string {
+        let clean = phone.trim().replace(/\D/g, '');
+
+        // Handle local Ugandan format (07... or 0...)
+        if (clean.startsWith('0') && clean.length === 10) {
+            return '+256' + clean.substring(1);
+        }
+
+        // Handle numbers without + but with country code (256...)
+        if (clean.startsWith('256') && clean.length === 12) {
+            return '+' + clean;
+        }
+
+        // Default: If it doesn't start with +, add it (assuming it's already international)
+        return phone.startsWith('+') ? phone : '+' + clean;
+    }
+
     static async sendMessage(data: {
         userId: string;
         recipient: string;
@@ -24,7 +44,6 @@ export class MessagingService {
         }
 
         const session = user.whatsappSession;
-        const phoneNumber = data.recipient.replace(/\D/g, ''); // Clean phone number
 
         // 2. Create message in DB (Pending)
         const message = await db.message.create({
@@ -51,21 +70,17 @@ export class MessagingService {
             };
 
             // Eazireach prefers + prefix for international numbers
-            let cleanPhone = data.recipient.trim();
-            if (!cleanPhone.startsWith('+')) {
-                cleanPhone = '+' + cleanPhone.replace(/\D/g, '');
-            }
+            const cleanPhone = this.normalizePhoneNumber(data.recipient);
 
             const isWhatsApp = data.channel === 'whatsapp' || data.channel === 'both';
-            const hasMedia = !!data.mediaUrl;
 
-            // If media is present, docs only show support for whatsapp channel
-            const channel = (hasMedia && isWhatsApp) ? ["whatsapp"] : (data.channel === 'both' ? ['sms', 'whatsapp'] : [data.channel]);
+            // Eazireach permits sending SMS (text) and WhatsApp (media) in the same call
+            const channelPayload = data.channel === 'both' ? ['sms', 'whatsapp'] : [data.channel];
 
             const body: any = {
                 recipients: [{ phone: cleanPhone }],
                 message: data.content,
-                channel: channel,
+                channel: channelPayload,
             };
 
             if (isWhatsApp) {
@@ -189,16 +204,16 @@ export class MessagingService {
 
             const isWhatsApp = data.channel === 'whatsapp' || data.channel === 'both';
             const hasMedia = !!data.mediaUrl;
-            const channel = (hasMedia && isWhatsApp) ? ["whatsapp"] : (data.channel === 'both' ? ['sms', 'whatsapp'] : [data.channel]);
+            // Eazireach permits sending SMS (text) and WhatsApp (media) in the same call
+            const channelPayload = data.channel === 'both' ? ['sms', 'whatsapp'] : [data.channel];
 
             const body: any = {
                 recipients: data.recipients.map(r => {
-                    let phone = r.trim();
-                    if (!phone.startsWith('+')) phone = '+' + phone.replace(/\D/g, '');
+                    const phone = this.normalizePhoneNumber(r);
                     return { phone };
                 }),
                 message: data.content,
-                channel: channel,
+                channel: channelPayload,
             };
 
             if (isWhatsApp) {
@@ -462,26 +477,47 @@ export class MessagingService {
         });
     }
 
-    /**
-     * Internal: Call Eazireach SMS API (Legacy)
-     * Now handled directly in sendMessage via the unified /send endpoint
-     */
-    private static async sendExternalSMS(to: string, message: string) {
-        // Implementation moved to sendMessage
-    }
-
-    /**
-     * Internal: Call Eazireach WhatsApp API (Legacy)
-     * Now handled directly in sendMessage via the unified /send endpoint
-     */
-    private static async sendExternalWhatsApp(to: string, message: string, mediaUrl?: string) {
-        // Implementation moved to sendMessage
-    }
-
     static async getAllMessages(userId: string): Promise<Message[]> {
         return await db.message.findMany({
             where: { userId },
             orderBy: { createdAt: 'desc' },
         }) as any;
+    }
+}
+
+export class MessageTemplateService {
+    static async getAll(userId: string): Promise<MessageTemplate[]> {
+        return await db.messageTemplate.findMany({
+            where: { userId },
+            orderBy: { createdAt: 'desc' },
+        }) as any;
+    }
+
+    static async getById(id: string): Promise<MessageTemplate | null> {
+        return await db.messageTemplate.findUnique({
+            where: { id },
+        }) as any;
+    }
+
+    static async create(userId: string, data: CreateTemplateInput): Promise<MessageTemplate> {
+        return await db.messageTemplate.create({
+            data: {
+                ...data,
+                userId,
+            },
+        }) as any;
+    }
+
+    static async update(id: string, data: Partial<CreateTemplateInput>): Promise<MessageTemplate> {
+        return await db.messageTemplate.update({
+            where: { id },
+            data,
+        }) as any;
+    }
+
+    static async delete(id: string): Promise<void> {
+        await db.messageTemplate.delete({
+            where: { id },
+        });
     }
 }

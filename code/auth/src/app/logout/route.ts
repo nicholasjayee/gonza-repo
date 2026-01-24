@@ -12,7 +12,12 @@ export async function GET() {
         } catch (error) {
             console.error('Logout error:', error);
         }
-        cookieStore.delete('refreshToken');
+        cookieStore.delete({ name: 'accessToken', path: '/' });
+        cookieStore.delete({ name: 'refreshToken', path: '/' });
+        cookieStore.delete({ name: 'userData', path: '/' });
+
+        // Preserve INTENT (activeBranchId) but clear VERIFICATION
+        cookieStore.delete({ name: 'branchVerifiedId', path: '/' });
     }
 
     const websiteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || 'http://localhost:3000';

@@ -1,8 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { sendMessageAction, getUploadUrlAction, getCreditBalanceAction } from '../../api/controller';
-import { MessageChannel } from '../../types';
+import { sendMessageAction, getUploadUrlAction, getCreditBalanceAction, getTemplatesAction } from '../../api/controller';
+import { getCustomersAction } from '@/customers/api/controller';
+import { MessageChannel, MessageTemplate } from '../../types';
+import { Customer } from '@/customers/types';
+import { FileText, ChevronDown, Users, Search, Check, Plus, Trash2 } from 'lucide-react';
 
 export default function ComposeMessagePage() {
     const [channels, setChannels] = useState<MessageChannel[]>(['sms']);
@@ -14,6 +17,11 @@ export default function ComposeMessagePage() {
     const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [userId, setUserId] = useState<string | null>(null);
     const [creditBalance, setCreditBalance] = useState<number | null>(null);
+    const [templates, setTemplates] = useState<MessageTemplate[]>([]);
+    const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+    const [customers, setCustomers] = useState<Customer[]>([]);
+    const [showCustomerSelector, setShowCustomerSelector] = useState(false);
+    const [customerSearch, setCustomerSearch] = useState('');
 
     useEffect(() => {
         const userDataStr = document.cookie
@@ -32,6 +40,15 @@ export default function ComposeMessagePage() {
                     if (res.success) {
                         setCreditBalance(res.data);
                     }
+                });
+                // Fetch templates
+                getTemplatesAction(user.id).then(res => {
+                    if (res.success) setTemplates(res.data || []);
+                });
+
+                // Fetch customers
+                getCustomersAction().then(res => {
+                    if (res.success) setCustomers(res.data || []);
                 });
             } catch (error) {
                 console.error('Error parsing userData cookie:', error);
@@ -196,7 +213,83 @@ export default function ComposeMessagePage() {
 
                         {/* Recipients */}
                         <div className="space-y-3">
-                            <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Recipients</label>
+                            <div className="flex items-center justify-between">
+                                <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Recipients</label>
+                                <div className="relative">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCustomerSelector(!showCustomerSelector)}
+                                        className="inline-flex items-center gap-2 px-3 py-1 bg-primary/5 hover:bg-primary/10 border border-primary/20 rounded-lg text-[10px] font-black uppercase tracking-widest text-primary transition-all"
+                                    >
+                                        <Users className="w-3 h-3" />
+                                        Select from Customers
+                                        <ChevronDown className={`w-3 h-3 transition-transform ${showCustomerSelector ? 'rotate-180' : ''}`} />
+                                    </button>
+
+                                    {showCustomerSelector && (
+                                        <div className="absolute right-0 top-full mt-2 w-72 bg-card border border-border rounded-xl shadow-2xl z-[60] overflow-hidden animate-in zoom-in-95 duration-200">
+                                            <div className="p-3 border-b border-border bg-muted/20">
+                                                <div className="relative">
+                                                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Search customers..."
+                                                        className="w-full bg-background border border-border rounded-lg pl-8 pr-3 py-1.5 text-[11px] outline-none focus:ring-1 focus:ring-primary transition-all"
+                                                        value={customerSearch}
+                                                        onChange={e => setCustomerSearch(e.target.value)}
+                                                        autoFocus
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="max-h-60 overflow-y-auto no-scrollbar">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const allNumbers = customers
+                                                            .map(c => c.phone)
+                                                            .filter(p => !!p)
+                                                            .join(', ');
+                                                        setRecipients(allNumbers);
+                                                        setShowCustomerSelector(false);
+                                                    }}
+                                                    className="w-full text-left p-3 hover:bg-primary/5 border-b border-border/50 transition-colors flex items-center justify-between group"
+                                                >
+                                                    <span className="text-xs font-black text-primary">SELECT ALL CUSTOMERS</span>
+                                                    <span className="text-[10px] font-bold text-muted-foreground px-1.5 py-0.5 bg-muted rounded-md">{customers.length}</span>
+                                                </button>
+                                                {customers
+                                                    .filter(c => c.name.toLowerCase().includes(customerSearch.toLowerCase()) || c.phone?.includes(customerSearch))
+                                                    .map(customer => {
+                                                        const isSelected = recipients.includes(customer.phone || '____MUST_NOT_MATCH____');
+                                                        return (
+                                                            <button
+                                                                key={customer.id}
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    if (!customer.phone) return;
+                                                                    const currentList = recipients.split(',').map(r => r.trim()).filter(r => r !== '');
+                                                                    if (isSelected) {
+                                                                        setRecipients(currentList.filter(r => r !== customer.phone).join(', '));
+                                                                    } else {
+                                                                        setRecipients([...currentList, customer.phone].join(', '));
+                                                                    }
+                                                                }}
+                                                                className="w-full text-left p-3 hover:bg-muted/50 border-b border-border/50 transition-colors flex items-center justify-between"
+                                                            >
+                                                                <div className="space-y-0.5">
+                                                                    <p className="text-xs font-bold text-foreground">{customer.name}</p>
+                                                                    <p className="text-[10px] text-muted-foreground">{customer.phone || 'No phone'}</p>
+                                                                </div>
+                                                                {isSelected && <Check className="w-3.5 h-3.5 text-primary" />}
+                                                            </button>
+                                                        );
+                                                    })
+                                                }
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                             <textarea
                                 value={recipients}
                                 onChange={(e) => setRecipients(e.target.value)}
@@ -208,7 +301,51 @@ export default function ComposeMessagePage() {
 
                         {/* Content */}
                         <div className="space-y-3">
-                            <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Message</label>
+                            <div className="flex items-center justify-between">
+                                <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Message</label>
+                                <div className="relative">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowTemplateSelector(!showTemplateSelector)}
+                                        className="inline-flex items-center gap-2 px-3 py-1 bg-muted/50 hover:bg-muted border border-border rounded-lg text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground transition-all"
+                                    >
+                                        <FileText className="w-3 h-3" />
+                                        Use Template
+                                        <ChevronDown className={`w-3 h-3 transition-transform ${showTemplateSelector ? 'rotate-180' : ''}`} />
+                                    </button>
+
+                                    {showTemplateSelector && (
+                                        <div className="absolute right-0 top-full mt-2 w-64 bg-card border border-border rounded-xl shadow-2xl z-50 overflow-hidden animate-in zoom-in-95 duration-200">
+                                            <div className="p-3 border-b border-border bg-muted/20">
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Select a template</p>
+                                            </div>
+                                            <div className="max-h-60 overflow-y-auto no-scrollbar">
+                                                {templates.length > 0 ? templates.map(t => (
+                                                    <button
+                                                        key={t.id}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setContent(t.content);
+                                                            setShowTemplateSelector(false);
+                                                        }}
+                                                        className="w-full text-left p-3 hover:bg-muted/50 border-b border-border/50 transition-colors last:border-0"
+                                                    >
+                                                        <p className="text-xs font-bold text-foreground mb-1">{t.name}</p>
+                                                        <p className="text-[10px] text-muted-foreground line-clamp-1">{t.content}</p>
+                                                    </button>
+                                                )) : (
+                                                    <div className="p-4 text-center">
+                                                        <p className="text-[10px] font-bold text-muted-foreground uppercase">No templates saved</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="p-3 bg-muted/10">
+                                                <a href="/messaging/templates" className="text-[9px] font-black uppercase tracking-widest text-primary hover:underline block text-center">Manage Templates</a>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                             <textarea
                                 value={content}
                                 onChange={(e) => setContent(e.target.value)}

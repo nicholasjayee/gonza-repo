@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // =========================
@@ -19,15 +20,33 @@ model User {
   image         String?        // Profile picture URL
   roleId        String
   role          Role           @relation(fields: [roleId], references: [id])
+  branchId      String?
+  branch        Branch?        @relation("BranchUsers", fields: [branchId], references: [id])
+  ownedBranches Branch[]       @relation("AdminBranches")
   refreshTokens RefreshToken[]
   accounts      Account[]      // OAuth accounts (Google, etc.)
   messages      Message[]
   campaigns     Campaign[]
+  templates     MessageTemplate[]
   whatsappSession WhatsAppSession?
   transactions  Transaction[]
+  products      Product[]
+  customers     Customer[]  @relation("CustomerOwner")
+  sales         Sale[]      @relation("SalesCreated")
+  expenses      Expense[]
   credits       Int            @default(0)
   createdAt     DateTime       @default(now())
+
   updatedAt     DateTime       @updatedAt
+  productHistory ProductHistory[]
+  defaultThankYouTemplateId String?
+  
+  stockTransfers StockTransfer[]
+  requisitions   Requisition[]
+  
+  assignedTasks  Task[]        @relation("TaskAssignee")
+  createdTasks   Task[]        @relation("TaskCreator")
+  isActive      Boolean        @default(true)
 }
 
 model Account {
@@ -112,6 +131,16 @@ model Campaign {
   createdAt DateTime  @default(now())
 }
 
+model MessageTemplate {
+  id        String   @id @default(cuid())
+  name      String
+  content   String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model WhatsAppSession {
   id                String   @id @default(cuid())
   userId            String   @unique
@@ -138,4 +167,431 @@ model Transaction {
   description             String?
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
+}
+
+// =========================
+// 📦 PRODUCT INVENTORY
+// =========================
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Supplier {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  contactName String?
+  email       String?
+  phone       String?
+  address     String?
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Product {
+  id           String    @id @default(cuid())
+  name         String
+  slug         String?   @unique
+  description  String?
+  sellingPrice Float     @default(0) // renamed from price
+  costPrice    Float     @default(0)
+  initialStock Int       @default(0)
+  minStock     Int       @default(0)
+  stock        Int       @default(0) // current stock
+  barcode      String?   
+  sku          String?   
+  image        String?   // R2 URL
+  
+  categoryId   String?
+  category     Category? @relation(fields: [categoryId], references: [id])
+  
+  supplierId   String?
+  supplier     Supplier? @relation(fields: [supplierId], references: [id])
+  
+  branchId     String?
+  branch       Branch?   @relation(fields: [branchId], references: [id])
+  
+  userId       String
+  user         User      @relation(fields: [userId], references: [id])
+  
+  saleItems    SaleItem[]
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  history      ProductHistory[]
+
+  @@unique([branchId, sku])
+  @@unique([branchId, barcode])
+  @@unique([branchId, slug])
+}
+
+model Branch {
+  id             String     @id @default(cuid())
+  name           String     @unique
+  location       String
+  phone          String?
+  email          String?
+  type           BranchType @default(SUB)
+  accessPassword String?    // Nullable if we want to allow open branches
+  adminId        String
+  admin          User       @relation("AdminBranches", fields: [adminId], references: [id])
+  users          User[]     @relation("BranchUsers")
+  products       Product[]
+  customers      Customer[]
+  sales          Sale[]
+  expenses       Expense[]
+  cashAccounts   CashAccount[]
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  fromTransfers  StockTransfer[] @relation("FromBranch")
+  toTransfers    StockTransfer[] @relation("ToBranch")
+  requisitions   Requisition[]
+  tasks          Task[]
+  settings       BranchSettings?
+}
+
+model CashAccount {
+  id             String   @id @default(cuid())
+  name           String
+  description    String?
+  initialBalance Decimal  @default(0) @db.Decimal(10, 2)
+  currentBalance Decimal  @default(0) @db.Decimal(10, 2)
+  isActive       Boolean  @default(true)
+  
+  branchId       String
+  branch         Branch   @relation(fields: [branchId], references: [id])
+  
+  sales          Sale[]
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Expense {
+  id            String   @id @default(cuid())
+  amount        Decimal  @db.Decimal(10, 2)
+  description   String
+  category      String
+  date          DateTime @default(now())
+  paymentMethod String?
+  reference     String?
+
+  branchId      String
+  branch        Branch   @relation(fields: [branchId], references: [id])
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+enum BranchType {
+  MAIN
+  SUB
+}
+
+// =========================
+// 👥 CUSTOMER MODULE
+// =========================
+
+model Customer {
+  id          String   @id @default(cuid())
+  name        String
+  phone       String?  // Non-unique, duplicates allowed
+  email       String?
+  address     String?
+  city        String?
+  notes       String?
+  
+  // Multi-tenancy
+  branchId    String?
+  branch      Branch?  @relation(fields: [branchId], references: [id])
+  adminId     String   // Owner isolation
+  admin       User     @relation("CustomerOwner", fields: [adminId], references: [id])
+  
+  sales       Sale[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// =========================
+// 💰 SALES MODULE
+// =========================
+
+model Sale {
+  id              String        @id @default(cuid())
+  saleNumber      String        @unique // Auto-generated: "SAL-2024-001"
+  date            DateTime      @default(now())
+  
+  // Customer Info (denormalized for fast access)
+  customerId      String?
+  customer        Customer?     @relation(fields: [customerId], references: [id])
+  customerName    String
+  customerPhone   String?
+  customerAddress String?
+  
+  // Sale Source
+  source          SaleSource    @default(WALK_IN)
+  
+  // Line Items
+  items           SaleItem[]
+  
+  // Financials
+  subtotal        Decimal       @db.Decimal(10, 2)
+  discount        Decimal       @default(0) @db.Decimal(10, 2)
+  discountType    DiscountType  @default(AMOUNT)
+  taxRate         Decimal       @default(0) @db.Decimal(5, 2)
+  taxAmount       Decimal       @default(0) @db.Decimal(10, 2)
+  total           Decimal       @db.Decimal(10, 2)
+  
+  // Payment
+  paymentStatus   PaymentStatus @default(UNPAID)
+  amountPaid      Decimal       @default(0) @db.Decimal(10, 2)
+  balance         Decimal       @default(0) @db.Decimal(10, 2)
+  
+  // Cash Account (optional)
+  cashAccountId   String?
+  cashAccount     CashAccount?  @relation(fields: [cashAccountId], references: [id])
+  
+  // Multi-tenancy & Tracking
+  branchId        String
+  branch          Branch        @relation(fields: [branchId], references: [id])
+  userId          String
+  user            User          @relation("SalesCreated", fields: [userId], references: [id])
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model SaleItem {
+  id            String   @id @default(cuid())
+  saleId        String
+  sale          Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  
+  productId     String?
+  product       Product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
+  
+  // Item Details (snapshot at sale time)
+  productName   String
+  sku           String?
+  quantity      Int
+  unitCost      Decimal  @db.Decimal(10, 2) // Hidden from regular users
+  sellingPrice  Decimal  @db.Decimal(10, 2)
+  discount      Decimal  @default(0) @db.Decimal(10, 2)
+  lineTotal     Decimal  @db.Decimal(10, 2)
+  
+  createdAt     DateTime @default(now())
+}
+
+enum SaleSource {
+  WALK_IN
+  PHONE
+  ONLINE
+  REFERRAL
+  RETURNING
+}
+
+enum PaymentStatus {
+  PAID
+  UNPAID
+  QUOTE        // Does NOT deduct stock
+  INSTALLMENT
+  PARTIAL
+}
+
+enum DiscountType {
+  PERCENTAGE
+  AMOUNT
+}
+
+model ProductHistory {
+  id              String             @id @default(cuid())
+  productId       String
+  product         Product            @relation(fields: [productId], references: [id], onDelete: Cascade)
+  type            ProductHistoryType
+  quantityChange  Int                @default(0)
+  oldStock        Int
+  newStock        Int
+  oldPrice        Float?
+  newPrice        Float?
+  oldCost         Float?
+  newCost         Float?
+  referenceId     String?            // saleId, orderId, etc.
+  referenceType   String?            // "SALE", "ORDER", etc.
+  reason          String?
+  userId          String
+  user            User               @relation(fields: [userId], references: [id])
+  createdAt       DateTime           @default(now())
+}
+
+enum ProductHistoryType {
+  SALE
+  RETURN_IN
+  RESTOCK
+  ADJUSTMENT
+  PRICE_CHANGE
+  COST_CHANGE
+  CREATED
+  STOCK_TAKE
+  TRANSFER_IN
+  TRANSFER_OUT
+}
+
+model StockTransfer {
+  id              String              @id @default(cuid())
+  transferNumber  String              @unique // "TRF-2024-001"
+  date            DateTime            @default(now())
+  
+  fromBranchId    String
+  fromBranch      Branch              @relation("FromBranch", fields: [fromBranchId], references: [id])
+  
+  toBranchId      String
+  toBranch        Branch              @relation("ToBranch", fields: [toBranchId], references: [id])
+  
+  status          TransferStatus      @default(COMPLETED)
+  items           StockTransferItem[]
+  
+  notes           String?
+  userId          String
+  user            User                @relation(fields: [userId], references: [id])
+  
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+}
+
+model StockTransferItem {
+  id              String        @id @default(cuid())
+  transferId      String
+  transfer        StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  
+  productId       String
+  productName     String
+  sku             String?
+  quantity        Int
+  
+  createdAt       DateTime      @default(now())
+}
+
+enum TransferStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+model Requisition {
+  id              String             @id @default(cuid())
+  requisitionNumber String           @unique // "REQ-2024-001"
+  date            DateTime           @default(now())
+  
+  branchId        String
+  branch          Branch             @relation(fields: [branchId], references: [id])
+  
+  userId          String
+  user            User               @relation(fields: [userId], references: [id])
+  
+  status          RequisitionStatus  @default(PENDING)
+  priority        String             @default("NORMAL") // "LOW", "NORMAL", "HIGH", "URGENT"
+  
+  items           RequisitionItem[]
+  notes           String?
+  
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+}
+
+model RequisitionItem {
+  id              String      @id @default(cuid())
+  requisitionId   String
+  requisition     Requisition @relation(fields: [requisitionId], references: [id], onDelete: Cascade)
+  
+  productName     String
+  sku             String?
+  quantity        Int
+  
+  createdAt       DateTime    @default(now())
+}
+
+enum RequisitionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  FULFILLED
+  CANCELLED
+}
+
+// =========================
+// 🗓️ TASKS MODULE
+// =========================
+
+model Task {
+  id          String      @id @default(cuid())
+  title       String
+  description String?
+  dueDate     DateTime?
+  
+  priority    TaskPriority @default(NORMAL)
+  status      TaskStatus   @default(TODO)
+  
+  assignedToId String?
+  assignedTo   User?       @relation("TaskAssignee", fields: [assignedToId], references: [id])
+  
+  createdById  String
+  createdBy    User        @relation("TaskCreator", fields: [createdById], references: [id])
+  
+  branchId     String
+  branch       Branch      @relation(fields: [branchId], references: [id])
+  
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+enum TaskPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  REVIEW
+  DONE
+  CANCELLED
+}
+
+// =========================
+// ⚙️ SETTINGS MODULE
+// =========================
+
+model BranchSettings {
+  id            String   @id @default(cuid())
+  branchId      String   @unique
+  branch        Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  
+  // Branding
+  logo          String?
+  signatureImage String?
+  enableSignature Boolean @default(false)
+  
+  // Business Info
+  businessName  String?
+  address       String?
+  phone         String?
+  email         String?
+  website       String?
+  
+  // Preferences
+  currency      String   @default("UGX")
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }

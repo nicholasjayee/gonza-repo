@@ -1,11 +1,7 @@
-import { Metadata } from "next";
-import ProductsPage from "@/products/ui/pages/ProductsPage";
+"use client";
 
-export const metadata: Metadata = {
-    title: 'Product Catalog | Gonza Client',
-    description: 'Organize your product inventory, manage pricing, and track product performance.',
-};
+import { ProductsListPage } from "@/products/ui/pages/product/ProductsListPage";
 
 export default function Page() {
-    return <ProductsPage />;
+    return <ProductsListPage />;
 }

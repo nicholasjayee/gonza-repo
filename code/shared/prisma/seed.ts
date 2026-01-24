@@ -123,6 +123,23 @@ async function main() {
     console.log('  - superadmin@gonza.com (Superadmin)');
     console.log('  - admin@gonza.com (Client Admin)');
     console.log('  - manager@gonza.com (Client Manager)');
+
+    // Create a default Branch for the admin
+    console.log('Creating default branch...');
+    const adminUser = await prisma.user.findUnique({ where: { email: 'admin@gonza.com' } });
+    if (adminUser) {
+        await prisma.branch.upsert({
+            where: { name: 'Main Branch' },
+            update: { adminId: adminUser.id },
+            create: {
+                name: 'Main Branch',
+                location: 'Kampala',
+                adminId: adminUser.id
+            }
+        });
+        console.log('✓ Created default branch: Main Branch');
+    }
+
     console.log('  Password for all: password123');
     console.log('🎉 Seeding completed successfully!');
 }

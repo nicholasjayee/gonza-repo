@@ -6,7 +6,7 @@ export async function GET() {
     const client = new OAuth2Client(
         env.GOOGLE_CLIENT_ID,
         env.GOOGLE_CLIENT_SECRET,
-        `${env.AUTH_URL}/api/auth/google/callback`
+        `${env.AUTH_URL}/auth/google/callback`
     );
 
     const url = client.generateAuthUrl({

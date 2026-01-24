@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { initiateTopUpAction, getCreditBalanceAction } from '../../api/controller';
-import { PaymentPoller } from '../../api/payment-poller';
+import { initiateTopUpAction, getCreditBalanceAction, syncPaymentsAction } from '../../api/controller';
+import { RefreshCw } from 'lucide-react';
 
 export default function TopUpPage() {
     const [balance, setBalance] = useState<number | null>(null);
@@ -40,6 +40,15 @@ export default function TopUpPage() {
         if (res.success) setBalance(res.data ?? 0);
     };
 
+    const handleSync = async () => {
+        setIsLoading(true);
+        const res = await syncPaymentsAction();
+        if (res.success && userId) {
+            await fetchBalance(userId);
+        }
+        setIsLoading(false);
+    };
+
     const handleInitiate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!userId || !userInfo) return;
@@ -65,8 +74,6 @@ export default function TopUpPage() {
 
         if (res.success && res.data?.redirectUrl) {
             setIframeUrl(res.data.redirectUrl);
-            // Start polling for payment status
-            PaymentPoller.start();
         } else {
             setError(res.error || 'Failed to initiate payment.');
         }
@@ -121,14 +128,19 @@ export default function TopUpPage() {
                         <p className="text-sm text-muted-foreground">Top up your account to launch campaigns. 1 Credit = 1 Message.</p>
                     </header>
 
-                    <div className="p-6 bg-muted/30 rounded-2xl border border-border flex justify-between items-center">
+                    <div className="p-6 bg-muted/30 rounded-2xl border border-border flex justify-between items-center group">
                         <div>
                             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Current Balance</p>
                             <p className="text-3xl font-black">{balance !== null ? balance : '--'} <span className="text-sm font-bold text-muted-foreground">Credits</span></p>
                         </div>
-                        <div className="w-12 h-12 bg-foreground text-background rounded-full flex items-center justify-center font-black text-xl">
-                            $
-                        </div>
+                        <button
+                            onClick={handleSync}
+                            disabled={isLoading}
+                            className="w-10 h-10 bg-background border border-border rounded-xl flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary transition-all group-hover:shadow-sm"
+                            title="Sync Payment Status"
+                        >
+                            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                        </button>
                     </div>
 
                     {error && (

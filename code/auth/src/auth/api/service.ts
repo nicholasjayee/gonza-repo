@@ -77,6 +77,10 @@ export class AuthService {
             throw new Error('Invalid credentials');
         }
 
+        if (!user.isActive) {
+            throw new Error('Your account has been frozen. Please contact administration.');
+        }
+
         // Generate tokens
         const permissions = user.role.permissions.map((p) => p.name);
         const accessToken = generateAccessToken({
@@ -106,6 +110,7 @@ export class AuthService {
                 email: user.email,
                 name: user.name,
                 role: user.role.name,
+                isActive: user.isActive,
                 permissions,
             },
         };
@@ -140,6 +145,10 @@ export class AuthService {
 
         // Generate new access token
         const user = storedToken.user;
+        if (!user.isActive) {
+            throw new Error('Your account has been frozen. Please contact administration.');
+        }
+
         const permissions = user.role.permissions.map((p) => p.name);
         const accessToken = generateAccessToken({
             userId: user.id,
@@ -155,6 +164,7 @@ export class AuthService {
                 email: user.email,
                 name: user.name,
                 role: user.role.name,
+                isActive: user.isActive,
                 permissions,
             },
         };
@@ -189,6 +199,7 @@ export class AuthService {
         accessToken: string;
         refreshToken?: string;
     }) {
+        console.log('[AuthService] handleGoogleAuth check existing account for googleId:', data.googleId);
         // Check if account already exists
         let account = await db.account.findUnique({
             where: {
@@ -211,8 +222,13 @@ export class AuthService {
         });
 
         if (account) {
-            // Existing user, generate tokens
+            console.log('[AuthService] Existing account found for user:', account.user.email);
             const user = account.user;
+
+            if (!user.isActive) {
+                throw new Error('Your account has been frozen. Please contact administration.');
+            }
+
             const permissions = user.role.permissions.map((p) => p.name);
             const accessToken = generateAccessToken({
                 userId: user.id,
@@ -240,6 +256,7 @@ export class AuthService {
                     email: user.email,
                     name: user.name,
                     role: user.role.name,
+                    isActive: user.isActive,
                     permissions,
                 },
             };
@@ -260,14 +277,18 @@ export class AuthService {
         if (!user) {
             // Create new user - need default roleId
             // You'll need to create a default "staff" role first
+            console.log('[AuthService] No existing user found for email:', data.email, '. Fetching default "admin" role...');
             const defaultRole = await db.role.findUnique({
                 where: { name: 'admin' },
             });
 
             if (!defaultRole) {
+                console.error('[AuthService] CRITICAL: Default "admin" role not found in database!');
                 throw new Error('Default role not found. Please create roles first.');
             }
+            console.log('[AuthService] Default role found with ID:', defaultRole.id);
 
+            console.log('[AuthService] Creating new user...');
             user = await db.user.create({
                 data: {
                     email: data.email,
@@ -284,9 +305,11 @@ export class AuthService {
                     },
                 },
             });
+            console.log('[AuthService] New user created:', user.id);
         }
 
         // Link Google account
+        console.log('[AuthService] Linking Google account for user:', user.id);
         await db.account.create({
             data: {
                 userId: user.id,
@@ -296,6 +319,10 @@ export class AuthService {
                 refreshToken: data.refreshToken,
             },
         });
+
+        if (!user.isActive) {
+            throw new Error('Your account has been frozen. Please contact administration.');
+        }
 
         // Generate our JWT tokens
         const permissions = user.role.permissions.map((p) => p.name);
@@ -325,6 +352,7 @@ export class AuthService {
                 email: user.email,
                 name: user.name,
                 role: user.role.name,
+                isActive: user.isActive,
                 permissions,
             },
         };

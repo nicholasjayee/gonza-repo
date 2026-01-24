@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { authGuard } from '../../shared/middleware/authGuard'; // Relative import to shared
+import { authGuard } from "@gonza/shared/middleware/authGuard";
 
 export function middleware(request: NextRequest) {
     // Client App Roles: admin, manager, superadmin

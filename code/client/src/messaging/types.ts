@@ -31,3 +31,17 @@ export interface WhatsAppSession {
     linkedPhoneNumber?: string;
     updatedAt: Date;
 }
+
+export interface MessageTemplate {
+    id: string;
+    name: string;
+    content: string;
+    userId: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface CreateTemplateInput {
+    name: string;
+    content: string;
+}

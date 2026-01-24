@@ -23,6 +23,10 @@ export async function signUpAction(formData: FormData) {
 
         const cookieStore = await cookies();
 
+        // CLEAR session verification on NEW LOGIN to force password prompt
+        // but KEEP activeBranchId intent so they go back to where they were
+        cookieStore.delete({ name: 'branchVerifiedId', path: '/' });
+
         // Set refresh token in HttpOnly cookie
         cookieStore.set('refreshToken', result.refreshToken, {
             httpOnly: true,
@@ -37,7 +41,8 @@ export async function signUpAction(formData: FormData) {
             id: result.user.id,
             name: result.user.name,
             email: result.user.email,
-            role: result.user.role
+            role: result.user.role,
+            isActive: result.user.isActive
         }), {
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
@@ -72,6 +77,10 @@ export async function signInAction(formData: FormData) {
 
         const cookieStore = await cookies();
 
+        // CLEAR session verification on NEW LOGIN to force password prompt
+        // but KEEP activeBranchId intent so they go back to where they were
+        cookieStore.delete({ name: 'branchVerifiedId', path: '/' });
+
         // Set refresh token in HttpOnly cookie
         cookieStore.set('refreshToken', result.refreshToken, {
             httpOnly: true,
@@ -86,7 +95,8 @@ export async function signInAction(formData: FormData) {
             id: result.user.id,
             name: result.user.name,
             email: result.user.email,
-            role: result.user.role
+            role: result.user.role,
+            isActive: result.user.isActive
         }), {
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
@@ -115,10 +125,10 @@ export async function signOutAction() {
 
         if (refreshToken) {
             await AuthService.logout(refreshToken);
-            cookieStore.delete('refreshToken');
+            cookieStore.delete({ name: 'refreshToken', path: '/' });
         }
 
-        cookieStore.delete('userData');
+        cookieStore.delete({ name: 'userData', path: '/' });
 
         return { success: true };
     } catch (error) {
@@ -149,7 +159,7 @@ export async function refreshTokenAction() {
     } catch (error) {
         console.error('Refresh token error:', error);
         // Delete invalid token
-        (await cookies()).delete('refreshToken');
+        (await cookies()).delete({ name: 'refreshToken', path: '/' });
         return { success: false, error: 'Session expired, please login again' };
     }
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PesaPalService } from "@/messaging/api/pesapal";
-import { db } from "@gonza/shared/prisma/db";
+import { PaymentService } from "@/messaging/api/payment-service";
 
 async function handleIPN(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -28,61 +28,23 @@ async function handleIPN(req: NextRequest) {
     }
 
     try {
-        // 1. Fetch current status from PesaPal
-        const statusResult = await PesaPalService.getTransactionStatus(orderTrackingId);
+        // 1. Fetch current status from PesaPal with wait/poll
+        const statusResult = await PesaPalService.waitForFinalStatus(orderTrackingId);
         console.log('[PesaPal IPN] Status Check Result:', statusResult);
+        if (!statusResult) throw new Error("Timed out or failed to get transaction status.");
 
-        // 2. Update Transaction in DB
-        const transaction = await db.transaction.findUnique({
-            where: { pesapalMerchantReference: merchantReference }
-        });
+        // 2. Update Transaction in DB using PaymentService
+        await PaymentService.updateTransactionStatus(merchantReference, statusResult);
 
-        if (!transaction) {
-            console.error('[PesaPal IPN] Transaction not found for reference:', merchantReference);
-            return NextResponse.json({ success: false, error: 'Transaction not found' }, { status: 404 });
-        }
-
-        // Only update if it's not already completed
-        if (transaction.status === 'completed') {
-            console.log('[PesaPal IPN] Transaction already completed.');
-            return NextResponse.json({ success: true, status: 'already_completed' });
-        }
-
-        const newStatus = statusResult.status_code === 1 ? 'completed' :
-            statusResult.status_code === 3 ? 'failed' : 'pending';
-
-        await db.transaction.update({
-            where: { id: transaction.id },
-            data: {
-                status: newStatus,
-                // Any other info from statusResult?
-            }
-        });
-
-        // 3. Award credits if completed
-        if (newStatus === 'completed') {
-            // Logic: amount / 100 for credits (Adjust as needed)
-            const creditsToStore = Math.floor(transaction.amount / 100);
-
-            await db.user.update({
-                where: { id: transaction.userId },
-                data: {
-                    credits: { increment: creditsToStore }
-                }
-            });
-            console.log(`[PesaPal IPN] Awarded ${creditsToStore} credits to user ${transaction.userId}`);
-        }
-
-        // PesaPal expects a specific response and code 200/500
+        // Always return 200 to Pesapal if we received the notification correctly
         return NextResponse.json({
-            orderNotificationType: notificationType,
-            orderTrackingId: orderTrackingId,
-            orderMerchantReference: merchantReference,
-            status: 200
+            success: true,
+            status: statusResult.status,
+            orderTrackingId
         });
-    } catch (error) {
-        console.error('[PesaPal IPN] Error:', error);
-        return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+    } catch (err: any) {
+        console.error('[PesaPal IPN] processing error:', err);
+        return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }
 }
 

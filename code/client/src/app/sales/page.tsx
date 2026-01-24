@@ -1,11 +1,22 @@
-import { Metadata } from "next";
-import SalesPage from "@/sales/ui/pages/SalesPage";
+import { getSalesAction } from '@/sales/api/controller';
+import { SalesListPage } from '@/sales/ui/pages/sale/SalesListPage';
+import { getActiveBranch } from '@/branches/api/branchContext';
+import { getSubBranchesAction } from '@/dashboard/api/controller';
 
-export const metadata: Metadata = {
-    title: 'Sales Management | Gonza Client',
-    description: 'Track orders, manage transactions, and monitor revenue across all channels.',
-};
+export const dynamic = 'force-dynamic';
 
-export default function Page() {
-    return <SalesPage />;
+export default async function SalesPage() {
+    const { branchType } = await getActiveBranch();
+    const salesRes = await getSalesAction();
+    const sales = salesRes.success && salesRes.data ? salesRes.data : [];
+
+    let branches: { id: string; name: string }[] = [];
+    if (branchType === 'MAIN') {
+        const branchesRes = await getSubBranchesAction();
+        if (branchesRes.success && branchesRes.data) {
+            branches = branchesRes.data as { id: string; name: string }[];
+        }
+    }
+
+    return <SalesListPage initialSales={sales} branchType={branchType} branches={branches} />;
 }

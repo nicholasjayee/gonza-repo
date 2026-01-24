@@ -1,7 +1,68 @@
+export type SaleSource = 'WALK_IN' | 'PHONE' | 'ONLINE' | 'REFERRAL' | 'RETURNING';
+export type PaymentStatus = 'PAID' | 'UNPAID' | 'QUOTE' | 'INSTALLMENT' | 'PARTIAL';
+export type DiscountType = 'PERCENTAGE' | 'AMOUNT';
+
+export interface SaleItem {
+    id: string;
+    saleId: string;
+    productId?: string | null;
+    productName: string;
+    sku?: string | null;
+    quantity: number;
+    unitCost: number;
+    sellingPrice: number;
+    discount: number;
+    lineTotal: number;
+    createdAt: Date;
+}
+
 export interface Sale {
     id: string;
-    amount: number;
-    items: any[]; // define stricter type later
+    saleNumber: string;
     date: Date;
-    status: 'completed' | 'pending' | 'cancelled';
+    customerId?: string | null;
+    customerName: string;
+    customerPhone?: string | null;
+    customerAddress?: string | null;
+    source: SaleSource;
+    items: SaleItem[];
+    subtotal: number;
+    discount: number;
+    discountType: DiscountType;
+    taxRate: number;
+    taxAmount: number;
+    total: number;
+    paymentStatus: PaymentStatus;
+    amountPaid: number;
+    balance: number;
+    cashAccountId?: string | null;
+    branchId: string;
+    userId: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface CreateSaleItemInput {
+    productId?: string;
+    productName: string;
+    sku?: string;
+    quantity: number;
+    unitCost: number;
+    sellingPrice: number;
+    discount: number;
+}
+
+export interface CreateSaleInput {
+    customerName: string;
+    customerPhone?: string;
+    customerAddress?: string;
+    customerId?: string;
+    source: SaleSource;
+    items: CreateSaleItemInput[];
+    discount: number;
+    discountType: DiscountType;
+    taxRate: number;
+    paymentStatus: PaymentStatus;
+    amountPaid: number;
+    cashAccountId?: string;
 }
