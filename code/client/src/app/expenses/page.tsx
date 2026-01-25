@@ -1,5 +1,7 @@
+import { Metadata } from "next";
 import { getActiveBranch } from "@/branches/api/branchContext";
 import { getSubBranchesAction } from "@/dashboard/api/controller";
+import ExpensesPage from "@/expenses/ui/pages/ExpensesPage";
 
 export const metadata: Metadata = {
     title: 'Expense Tracking | Gonza Client',

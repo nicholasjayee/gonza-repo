@@ -1,5 +1,7 @@
+import { Metadata } from "next";
 import { getActiveBranch } from "@/branches/api/branchContext";
 import { getSubBranchesAction } from "@/dashboard/api/controller";
+import InventoryPage from "@/inventory/ui/pages/InventoryPage";
 
 export const metadata: Metadata = {
     title: 'Inventory Control | Gonza Client',
