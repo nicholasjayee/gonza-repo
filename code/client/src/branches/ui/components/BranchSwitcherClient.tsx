@@ -47,17 +47,19 @@ export function BranchSwitcherClient({ branches, activeDetails }: BranchSwitcher
 
     return (
         <div className="relative">
-            <BranchPasswordModal
-                isOpen={passwordModal.isOpen}
-                onClose={() => setPasswordModal({ isOpen: false })}
-                onSuccess={() => {
-                    if (passwordModal.branch) {
-                        performSwitch(passwordModal.branch.id, passwordModal.branch.type);
-                    }
-                }}
-                branchId={passwordModal.branch?.id || ''}
-                branchName={passwordModal.branch?.name || ''}
-            />
+            {passwordModal.isOpen && (
+                <BranchPasswordModal
+                    isOpen={passwordModal.isOpen}
+                    onClose={() => setPasswordModal({ isOpen: false })}
+                    onSuccess={() => {
+                        if (passwordModal.branch) {
+                            performSwitch(passwordModal.branch.id, passwordModal.branch.type);
+                        }
+                    }}
+                    branchId={passwordModal.branch?.id || ''}
+                    branchName={passwordModal.branch?.name || ''}
+                />
+            )}
 
             <button
                 disabled={isSwitching}
@@ -98,7 +100,7 @@ export function BranchSwitcherClient({ branches, activeDetails }: BranchSwitcher
                                         }`}
                                 >
                                     <div className="flex items-center gap-2">
-                                        <span className={`w-1.5 h-1.5 rounded-full ${branch.type === 'MAIN' ? 'bg-primary' : 'bg-orange-400'}`} />
+                                        <span className={`w-1.5 h-1.5 rounded-full ${branch.type === 'MAIN' ? 'bg-primary' : 'bg-secondary'}`} />
                                         <span className="truncate max-w-[130px]">{branch.name}</span>
                                     </div>
                                     {branch.id === activeBranch?.id && <Check className="w-3.5 h-3.5" />}

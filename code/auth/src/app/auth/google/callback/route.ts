@@ -4,6 +4,8 @@ import { env } from '@gonza/shared/config/env';
 import { AuthService } from '@/auth/api/service';
 import { cookies } from 'next/headers';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const code = searchParams.get('code');

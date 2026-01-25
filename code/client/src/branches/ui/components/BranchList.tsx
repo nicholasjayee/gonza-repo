@@ -34,7 +34,7 @@ export function BranchList({ branches, onEdit, onDelete }: BranchListProps) {
                                         <div>
                                             <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
                                                 {branch.name}
-                                                {branch.accessPassword ? <Lock className="w-3 h-3 text-orange-500" /> : <Unlock className="w-3 h-3 text-emerald-500" />}
+                                                {branch.accessPassword ? <Lock className="w-3 h-3 text-secondary" /> : <Unlock className="w-3 h-3 text-primary" />}
                                             </h3>
                                             <p className="text-[10px] text-muted-foreground font-medium">ID: {branch.id.slice(-8).toUpperCase()}</p>
                                         </div>
@@ -70,7 +70,7 @@ export function BranchList({ branches, onEdit, onDelete }: BranchListProps) {
                                         </button>
                                         <button
                                             onClick={() => onDelete(branch.id)}
-                                            className="p-2 hover:bg-red-500/10 rounded-xl text-muted-foreground hover:text-red-500 transition-all"
+                                            className="p-2 hover:bg-destructive/10 rounded-xl text-muted-foreground hover:text-destructive transition-all"
                                         >
                                             <Shield className="w-4 h-4" />
                                         </button>

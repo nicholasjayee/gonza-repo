@@ -1,18 +1,13 @@
 "use client";
 
 import React from 'react';
-import { PaymentStatus, SaleSource } from '@/sales/types';
-import { Filter, X, Calendar, Database, Tag, CreditCard, ShoppingBag } from 'lucide-react';
+import { Filter, X } from 'lucide-react';
+import { SalesFiltersState } from './SalesFilters/types';
+import { PriceRangeFilter } from './SalesFilters/PriceRangeFilter';
+import { StatusSourceFilter } from './SalesFilters/StatusSourceFilter';
+import { DateRangeFilter } from './SalesFilters/DateRangeFilter';
 
-export interface SalesFiltersState {
-    minPrice: number;
-    maxPrice: number;
-    startDate: string;
-    endDate: string;
-    paymentStatus: PaymentStatus | '';
-    source: SaleSource | '';
-    datePreset?: string;
-}
+export type { SalesFiltersState } from './SalesFilters/types';
 
 interface SalesFiltersProps {
     filters: SalesFiltersState;
@@ -95,9 +90,6 @@ export const SalesFilters: React.FC<SalesFiltersProps> = ({
         onChange({ ...filters, [name]: value });
     };
 
-    const inputClasses = "w-full h-10 px-3 rounded-xl bg-background border border-border focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all text-xs font-medium";
-    const labelClasses = "text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70 mb-1.5 block px-1";
-
     return (
         <div className="bg-muted/30 border border-border rounded-2xl p-6 mt-4 mb-8 space-y-6">
             <div className="flex items-center justify-between border-b border-border/50 pb-4">
@@ -115,120 +107,21 @@ export const SalesFilters: React.FC<SalesFiltersProps> = ({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {/* Price Range */}
-                <div className="space-y-3">
-                    <div className="flex items-center gap-2 px-1">
-                        <Tag className="w-3 h-3 text-muted-foreground" />
-                        <span className={labelClasses.replace("mb-1.5", "")}>Price Range</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                        <input
-                            type="number"
-                            name="minPrice"
-                            placeholder="Min Price"
-                            value={filters.minPrice || ''}
-                            onChange={handleChange}
-                            className={inputClasses}
-                        />
-                        <input
-                            type="number"
-                            name="maxPrice"
-                            placeholder="Max Price"
-                            value={filters.maxPrice || ''}
-                            onChange={handleChange}
-                            className={inputClasses}
-                        />
-                    </div>
-                </div>
+                <PriceRangeFilter
+                    filters={filters}
+                    onChange={handleChange}
+                />
 
-                {/* Status & Source */}
-                <div className="space-y-3">
-                    <div className="flex items-center gap-2 px-1">
-                        <CreditCard className="w-3 h-3 text-muted-foreground" />
-                        <span className={labelClasses.replace("mb-1.5", "")}>Payment & Source</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                        <select
-                            name="paymentStatus"
-                            value={filters.paymentStatus}
-                            onChange={handleChange}
-                            className={inputClasses}
-                        >
-                            <option value="">Status</option>
-                            <option value="PAID">Paid</option>
-                            <option value="UNPAID">Unpaid</option>
-                            <option value="PARTIAL">Partial</option>
-                            <option value="QUOTE">Quote</option>
-                            <option value="INSTALLMENT">Installment</option>
-                        </select>
-                        <select
-                            name="source"
-                            value={filters.source}
-                            onChange={handleChange}
-                            className={inputClasses}
-                        >
-                            <option value="">Source</option>
-                            <option value="WALK_IN">Walk-in</option>
-                            <option value="PHONE">Phone</option>
-                            <option value="ONLINE">Online</option>
-                            <option value="REFERRAL">Referral</option>
-                            <option value="RETURNING">Returning</option>
-                        </select>
-                    </div>
-                </div>
+                <StatusSourceFilter
+                    filters={filters}
+                    onChange={handleChange}
+                />
 
-                {/* Date Range */}
-                <div className="col-span-1 lg:col-span-2 space-y-3">
-                    <div className="flex items-center gap-2 px-1">
-                        <Calendar className="w-3 h-3 text-muted-foreground" />
-                        <span className={labelClasses.replace("mb-1.5", "")}>Timeline Selection</span>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <select
-                            value={filters.datePreset || ''}
-                            onChange={(e) => handlePresetChange(e.target.value)}
-                            className={inputClasses}
-                        >
-                            <option value="">Any Time</option>
-                            <option value="today">Today</option>
-                            <option value="yesterday">Yesterday</option>
-                            <option value="this-week">This Week</option>
-                            <option value="last-week">Last Week</option>
-                            <option value="this-month">This Month</option>
-                            <option value="last-month">Last Month</option>
-                            <option value="this-year">This Year</option>
-                            <option value="last-year">Last Year</option>
-                            <option value="specific">Specific Date</option>
-                            <option value="custom">Custom Range</option>
-                        </select>
-
-                        {(filters.datePreset === 'specific' || filters.datePreset === 'custom') && (
-                            <input
-                                type="date"
-                                name="startDate"
-                                value={filters.startDate}
-                                onChange={(e) => {
-                                    const val = e.target.value;
-                                    if (filters.datePreset === 'specific') {
-                                        onChange({ ...filters, startDate: val, endDate: val });
-                                    } else {
-                                        onChange({ ...filters, startDate: val });
-                                    }
-                                }}
-                                className={inputClasses}
-                            />
-                        )}
-                        {filters.datePreset === 'custom' && (
-                            <input
-                                type="date"
-                                name="endDate"
-                                value={filters.endDate}
-                                onChange={handleChange}
-                                className={inputClasses}
-                            />
-                        )}
-                    </div>
-                </div>
+                <DateRangeFilter
+                    filters={filters}
+                    onChange={(updates) => onChange({ ...filters, ...updates })}
+                    onPresetChange={handlePresetChange}
+                />
             </div>
         </div>
     );

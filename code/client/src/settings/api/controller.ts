@@ -18,9 +18,9 @@ async function getAuth() {
         cookies: {
             get: (name: string) => cookieStore.get(name)
         }
-    } as any;
+    } as unknown as { cookies: { get: (key: string) => { value: string } | undefined } };
 
-    return authGuard(mockReq, ['user', 'admin']);
+    return authGuard(mockReq, ['user', 'admin', 'manager']);
 }
 
 /**
@@ -55,9 +55,11 @@ export async function getSettingsAction() {
 
     try {
         const { branchId } = await getActiveBranch();
+        if (!branchId) throw new Error("No active branch selected");
+
         const settings = await SettingService.getSettings(branchId);
         return { success: true, data: serialize(settings) };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Failed to fetch settings:", error);
         return { success: false, error: "Failed to fetch settings" };
     }
@@ -69,13 +71,18 @@ export async function updateSettingsAction(formData: FormData) {
 
     try {
         const { branchId } = await getActiveBranch();
+        if (!branchId) throw new Error("No active branch selected");
+
         const data: UpdateSettingsInput = {};
 
         // Text fields
-        const fields = ['businessName', 'address', 'phone', 'email', 'website', 'currency'];
+        const fields = ['businessName', 'address', 'phone', 'email', 'website', 'currency'] as const;
         fields.forEach(field => {
             const val = formData.get(field);
-            if (val !== null) (data as any)[field] = val as string;
+            if (val !== null) {
+                // Type-safe assignment
+                (data as Record<string, string | boolean | undefined>)[field] = val as string;
+            }
         });
 
         // Booleans
@@ -96,8 +103,9 @@ export async function updateSettingsAction(formData: FormData) {
 
         const settings = await SettingService.updateSettings(branchId, data);
         return { success: true, data: serialize(settings) };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Failed to update settings:", error);
-        return { success: false, error: error.message || "Failed to update settings" };
+        const errorMessage = error instanceof Error ? error.message : "Failed to update settings";
+        return { success: false, error: errorMessage };
     }
 }

@@ -1,83 +1,24 @@
-"use client";
-
-import React, { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import React from 'react';
 import { Sale } from '../../../types';
-import { getSaleAction, deleteSaleAction } from '../../../api/controller';
-import { ArrowLeft, Printer, Trash2, Calendar, User, Phone, MapPin, Receipt, Clock, Edit3 } from 'lucide-react';
+import { Calendar, User, Phone, MapPin, Receipt, Clock, Edit3 } from 'lucide-react';
 import { format } from 'date-fns';
-import { printSaleReceipt } from '@/products/hardware/utils/print';
-import { useSettings } from '@/settings/api/SettingsContext';
+import { DeleteSaleButton } from './components/DeleteSaleButton';
+import { PrintReceiptButton } from './components/PrintReceiptButton';
+import { BackButton } from './components/BackButton';
+import Link from 'next/link';
 
-export const SaleDetailsPage: React.FC = () => {
-    const router = useRouter();
-    const searchParams = useSearchParams();
-    const id = searchParams.get('id');
-    const { currency } = useSettings();
+interface SaleDetailsPageProps {
+    sale: Sale;
+    currency: string;
+}
 
-    const [sale, setSale] = useState<Sale | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [isDeleting, setIsDeleting] = useState(false);
-
-    useEffect(() => {
-        if (!id) {
-            setLoading(false);
-            return;
-        }
-        getSaleAction(id)
-            .then(res => {
-                if (res.success) {
-                    setSale(res.data as unknown as Sale);
-                }
-                setLoading(false);
-            })
-            .catch(err => {
-                console.error(err);
-                setLoading(false);
-            });
-    }, [id]);
-
-    const handleDelete = async () => {
-        if (!sale?.id) return;
-        if (!confirm("Are you sure you want to delete this sale? This action cannot be undone.")) return;
-
-        setIsDeleting(true);
-        try {
-            const res = await deleteSaleAction(sale.id);
-            if (res.success) {
-                router.push('/sales');
-            } else {
-                alert(res.error || "Failed to delete sale");
-            }
-        } catch (error) {
-            console.error(error);
-            alert("Failed to delete sale");
-        } finally {
-            setIsDeleting(false);
-        }
-    };
-
-    if (loading) return (
-        <div className="flex flex-col items-center justify-center py-20 animate-pulse">
-            <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4" />
-            <p className="text-sm font-bold text-muted-foreground">Loading sale details...</p>
-        </div>
-    );
-
-    if (!id) return <div className="p-10 text-center text-red-500">No sale ID provided.</div>;
-    if (!sale) return <div className="p-10 text-center text-red-500">Sale not found.</div>;
-
+export const SaleDetailsPage: React.FC<SaleDetailsPageProps> = ({ sale, currency }) => {
     return (
         <div className="space-y-8 max-w-5xl mx-auto pb-20">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
-                    <button
-                        onClick={() => router.push('/sales')}
-                        className="p-2 hover:bg-muted rounded-xl transition-colors text-muted-foreground"
-                    >
-                        <ArrowLeft className="h-5 w-5" />
-                    </button>
+                    <BackButton />
                     <div className="space-y-1">
                         <div className="flex items-center gap-2 text-muted-foreground h-4">
                             <span className="text-[10px] font-bold uppercase tracking-wider">{sale.source}</span>
@@ -92,28 +33,15 @@ export const SaleDetailsPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => router.push(`/sales/edit?id=${sale.id}`)}
+                    <Link
+                        href={`/sales/edit?id=${sale.id}`}
                         className="px-5 py-2.5 text-sm font-bold text-foreground bg-background border border-border rounded-xl hover:bg-muted transition-all flex items-center gap-2"
                     >
                         <Edit3 className="h-4 w-4" />
                         Edit
-                    </button>
-                    <button
-                        onClick={handleDelete}
-                        disabled={isDeleting}
-                        className="px-5 py-2.5 text-sm font-bold text-red-500 hover:bg-red-500/10 rounded-xl transition-all border border-red-500/20 flex items-center gap-2"
-                    >
-                        <Trash2 className="h-4 w-4" />
-                        Delete
-                    </button>
-                    <button
-                        onClick={() => sale && printSaleReceipt(sale)}
-                        className="px-5 py-2.5 text-sm font-bold bg-primary text-white rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all flex items-center gap-2"
-                    >
-                        <Printer className="h-4 w-4" />
-                        Print Receipt
-                    </button>
+                    </Link>
+                    <DeleteSaleButton saleId={sale.id} />
+                    <PrintReceiptButton sale={sale} />
                 </div>
             </div>
 
@@ -181,8 +109,8 @@ export const SaleDetailsPage: React.FC = () => {
                                     {sale.items.map((item, index) => (
                                         <tr key={index} className="hover:bg-muted/10 transition-colors">
                                             <td className="px-6 py-4 text-sm font-bold">
-                                                {item.product?.name || "Custom Item"}
-                                                {item.product?.sku && <p className="text-[10px] text-muted-foreground font-medium">{item.product.sku}</p>}
+                                                {item.productName || "Custom Item"}
+                                                {item.sku && <p className="text-[10px] text-muted-foreground font-medium">{item.sku}</p>}
                                             </td>
                                             <td className="px-6 py-4 text-center text-sm">
                                                 <span className="font-black underline decoration-primary/20 decoration-2 underline-offset-4">{item.quantity}</span>

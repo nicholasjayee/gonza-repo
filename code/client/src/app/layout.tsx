@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 import { SidebarProvider } from "@/shared/components/Sidebar";
-import { ThemeProvider } from "@/shared/components/ThemeToggle";
+import { ThemeProvider } from "@/shared/theme/ThemeProvider";
 import { BranchSwitcher } from "@/branches/ui/components/BranchSwitcher";
 import { getActiveBranch } from "@/branches/api/branchContext";
 import { OnboardingGuard } from "@/branches/ui/components/OnboardingGuard";
@@ -28,7 +28,7 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="antialiased font-sans" suppressHydrationWarning>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <ThemeProvider>
           <OnboardingGuard>
             <SettingsProvider initialSettings={initialSettings}>
               <SidebarProvider>

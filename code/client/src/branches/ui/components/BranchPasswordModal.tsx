@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { verifyBranchPasswordAction } from '../../api/controller';
 import { Lock, Loader2, ArrowRight } from 'lucide-react';
@@ -18,13 +18,13 @@ export function BranchPasswordModal({ isOpen, onClose, onSuccess, branchId, bran
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
-    // Reset password when modal opens/closes
-    useEffect(() => {
-        if (!isOpen) {
-            setPassword('');
-            setError('');
-        }
-    }, [isOpen]);
+    // Reset password when modal opens/closes - Handled by parent conditional rendering now
+    // useEffect(() => {
+    //     if (!isOpen) {
+    //         setPassword('');
+    //         setError('');
+    //     }
+    // }, [isOpen]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -46,10 +46,10 @@ export function BranchPasswordModal({ isOpen, onClose, onSuccess, branchId, bran
     if (!isOpen) return null;
 
     return createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-md bg-card border border-border rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-md bg-card border border-border rounded-4xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
                 <div className="p-8 text-center space-y-4">
-                    <div className="w-16 h-16 mx-auto rounded-3xl bg-orange-500/10 flex items-center justify-center text-orange-500 mb-2">
+                    <div className="w-16 h-16 mx-auto rounded-3xl bg-secondary/10 flex items-center justify-center text-secondary mb-2">
                         <Lock className="w-8 h-8" />
                     </div>
 
@@ -72,10 +72,10 @@ export function BranchPasswordModal({ isOpen, onClose, onSuccess, branchId, bran
                                 placeholder="••••••••"
                                 autoFocus
                                 autoComplete="new-password"
-                                className="w-full h-14 text-center text-2xl tracking-widest font-black rounded-xl bg-muted/50 border border-border focus:border-orange-500/50 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all placeholder:text-muted-foreground/20"
+                                className="w-full h-14 text-center text-2xl tracking-widest font-black rounded-xl bg-muted/50 border border-border focus:border-secondary/50 focus:ring-4 focus:ring-secondary/10 outline-none transition-all placeholder:text-muted-foreground/20"
                             />
                             {error && (
-                                <p className="text-[11px] font-bold text-red-500 animate-in slide-in-from-top-1">
+                                <p className="text-[11px] font-bold text-destructive animate-in slide-in-from-top-1">
                                     {error}
                                 </p>
                             )}
@@ -92,7 +92,7 @@ export function BranchPasswordModal({ isOpen, onClose, onSuccess, branchId, bran
                             <button
                                 type="submit"
                                 disabled={isLoading || !password}
-                                className="h-12 bg-orange-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-lg shadow-orange-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:hover:scale-100"
+                                className="h-12 bg-secondary text-secondary-foreground text-xs font-bold uppercase tracking-wider rounded-xl shadow-lg shadow-secondary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:hover:scale-100"
                             >
                                 {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Unlock <ArrowRight className="w-3 h-3" /></>}
                             </button>

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useSidebar } from '@/shared/components/Sidebar';
-import { ThemeToggle } from './ThemeToggle';
+import { ThemeToggle } from '@/shared/theme/ThemeToggle';
 
 export const Topbar: React.FC = () => {
     const { toggle } = useSidebar();

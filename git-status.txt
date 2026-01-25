@@ -1,0 +1,57 @@
+On branch windows-fix-css
+Changes not staged for commit:
+  (use "git add/rm <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   .gitignore
+	modified:   code/auth/package.json
+	modified:   code/auth/src/app/auth/google/callback/route.ts
+	modified:   code/auth/src/app/globals.css
+	modified:   code/auth/src/app/layout.tsx
+	modified:   code/auth/src/auth/ui/pages/ForgotPasswordPage.tsx
+	modified:   code/auth/src/auth/ui/pages/LoginPage.tsx
+	modified:   code/auth/src/auth/ui/pages/ResetPasswordPage.tsx
+	modified:   code/auth/src/auth/ui/pages/SignupPage.tsx
+	modified:   code/auth/tailwind.config.ts
+	modified:   code/client/src/app/globals.css
+	modified:   code/client/src/app/layout.tsx
+	modified:   code/client/src/app/sales/edit/page.tsx
+	modified:   code/client/src/app/sales/show/page.tsx
+	modified:   code/client/src/branches/ui/components/BranchList.tsx
+	modified:   code/client/src/branches/ui/components/BranchPasswordModal.tsx
+	modified:   code/client/src/branches/ui/components/BranchSwitcherClient.tsx
+	modified:   code/client/src/branches/ui/components/OnboardingGuard.tsx
+	modified:   code/client/src/branches/ui/pages/BranchSetupPage.tsx
+	modified:   code/client/src/branches/ui/pages/BranchesPage.tsx
+	modified:   code/client/src/finance/types.ts
+	modified:   code/client/src/sales/types.ts
+	modified:   code/client/src/sales/ui/components/SaleForm.tsx
+	modified:   code/client/src/sales/ui/components/SalesFilters.tsx
+	deleted:    code/client/src/sales/ui/components/SalesSummary.tsx
+	deleted:    code/client/src/sales/ui/components/SalesTable.tsx
+	modified:   code/client/src/sales/ui/index.ts
+	modified:   code/client/src/sales/ui/pages/NewSalePage.tsx
+	modified:   code/client/src/sales/ui/pages/sale/EditSalePage.tsx
+	modified:   code/client/src/sales/ui/pages/sale/SaleDetailsPage.tsx
+	modified:   code/client/src/settings/api/controller.ts
+	deleted:    code/client/src/shared/components/ThemeToggle.tsx
+	modified:   code/client/src/shared/components/Topbar.tsx
+	modified:   package-lock.json
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	code/auth/src/auth/ui/layout/
+	code/auth/src/auth/ui/pages/components/
+	code/auth/src/theme/
+	code/client/src/branches/ui/components/BranchSetupClient.tsx
+	code/client/src/branches/ui/components/BranchesClient.tsx
+	code/client/src/branches/ui/components/ClientOnboardingGuard.tsx
+	code/client/src/sales/ui/components/SalesFilters/
+	code/client/src/sales/ui/components/SalesSummary/
+	code/client/src/sales/ui/components/SalesTable/
+	code/client/src/sales/ui/components/saleform/
+	code/client/src/sales/ui/pages/sale/components/
+	code/client/src/shared/theme/
+	code/shared/assets/
+	git-status.txt
+
+no changes added to commit (use "git add" and/or "git commit -a")

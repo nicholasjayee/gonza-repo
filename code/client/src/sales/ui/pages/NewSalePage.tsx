@@ -1,5 +1,3 @@
-"use client";
-
 import React from 'react';
 import { SaleForm } from '../components/SaleForm';
 import { ShoppingCart } from 'lucide-react';

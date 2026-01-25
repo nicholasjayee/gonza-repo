@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { getBranchesAction, switchBranchAction } from '../../api/controller';
 import { useRouter, usePathname } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
 import { BranchPasswordModal } from './BranchPasswordModal';
 import { Branch } from '../../types';
 
@@ -15,15 +14,20 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
 
     useEffect(() => {
-        setMounted(true);
+        const timer = setTimeout(() => setMounted(true), 0);
+        return () => clearTimeout(timer);
+    }, []);
+
+    useEffect(() => {
+        if (!mounted) return;
         const checkBranches = async () => {
             // Already on setup or branches page? Don't redirect loop.
-            if (pathname.includes('/branches/setup')) {
+            if (pathname?.includes('/branches/setup')) {
                 setIsChecking(false);
                 return;
             }
 
-            const res = await getBranchesAction() as any;
+            const res = await getBranchesAction();
             if (res.success && res.data && res.data.length === 0) {
                 router.push('/branches/setup');
             } else {
@@ -38,8 +42,8 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
                     // 2. Try User's assigned branch (to be implemented later if needed)
                     // 3. Try MAIN branch
                     // 4. Try first branch
-                    const branchToUnlock = branches.find((b: any) => b.id === activeId)
-                        || branches.find((b: any) => b.type === 'MAIN')
+                    const branchToUnlock = branches.find((b: Branch) => b.id === activeId)
+                        || branches.find((b: Branch) => b.type === 'MAIN')
                         || branches[0];
 
                     if (branchToUnlock.accessPassword) {
@@ -53,7 +57,7 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
         };
 
         checkBranches();
-    }, [pathname, router]);
+    }, [pathname, router, mounted]);
 
     const handlePasswordSuccess = async () => {
         if (passwordPrompt.branch) {
@@ -70,10 +74,10 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
     if (passwordPrompt.isOpen && passwordPrompt.branch) {
         return (
             <>
-                <div className="fixed inset-0 z-[100] bg-background flex flex-col items-center justify-center gap-4 filter blur-sm">
+                <div className="fixed inset-0 z-100 bg-background flex flex-col items-center justify-center gap-4 filter blur-sm">
                     {/* Background blurred or blocked */}
                 </div>
-                <div className="fixed inset-0 z-[101] flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-101 flex items-center justify-center p-4">
                     <BranchPasswordModal
                         isOpen={true}
                         // Don't allow closing - must enter password or logout (reload)
@@ -89,7 +93,7 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
 
     if (isChecking) {
         return (
-            <div className="fixed inset-0 z-[100] bg-background flex flex-col items-center justify-center gap-4">
+            <div className="fixed inset-0 z-100 bg-background flex flex-col items-center justify-center gap-4">
                 <div className="relative">
                     <div className="w-12 h-12 rounded-full border-t-2 border-primary animate-spin" />
                     <div className="absolute inset-0 flex items-center justify-center">

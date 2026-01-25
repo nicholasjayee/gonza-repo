@@ -66,3 +66,20 @@ export interface CreateSaleInput {
     amountPaid: number;
     cashAccountId?: string;
 }
+
+export interface BranchSettings {
+    id: string;
+    branchId: string;
+    businessName: string;
+    address?: string | null;
+    phone?: string | null;
+    email?: string | null;
+    website?: string | null;
+    logo?: string | null;
+    currency: string;
+    timezone: string;
+    enableSignature: boolean;
+    signatureImage?: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
