@@ -17,40 +17,48 @@ export function useScanner({ onScan, minChars = 2, timeout = 50, enabled = true 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
         if (!enabled) return;
 
-        // Skip if focus is on a text input (unless it's the barcode field itself, but usually we want global)
-        const target = e.target as HTMLElement;
-        const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
-
-        // We allow scanning globally, but some systems might want to ignore if in other fields.
-        // For now, let's follow the existing logic which was global.
-
         const currentTime = Date.now();
         const diff = currentTime - lastKeyTime.current;
-
-        // Clear buffer if pause is too long (> 100ms) - characteristic of manual typing
-        if (diff > 100) {
-            scanBuffer.current = "";
-        }
-
         lastKeyTime.current = currentTime;
 
-        if (scanTimeout.current) clearTimeout(scanTimeout.current);
+        // Characters arriving very fast (< 30ms) are almost certainly from a scanner
+        const isScannerAction = diff < 30;
 
         if (e.key === 'Enter') {
             if (scanBuffer.current.length >= minChars) {
                 e.preventDefault();
+                e.stopPropagation();
                 onScan(scanBuffer.current);
                 scanBuffer.current = "";
+                if (scanTimeout.current) clearTimeout(scanTimeout.current);
             }
-        } else if (e.key && e.key.length === 1) {
+            return;
+        }
+
+        if (e.key && e.key.length === 1) {
+            // Buffer characters
             scanBuffer.current += e.key;
 
+            // If it's fast, prevent it from typing into the focused input
+            if (isScannerAction || scanBuffer.current.length > 1) {
+                const target = e.target as HTMLElement;
+                if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+                    e.preventDefault();
+                }
+            }
+
+            if (scanTimeout.current) clearTimeout(scanTimeout.current);
             scanTimeout.current = setTimeout(() => {
                 if (scanBuffer.current.length >= minChars) {
                     onScan(scanBuffer.current);
                     scanBuffer.current = "";
+                } else {
+                    scanBuffer.current = "";
                 }
             }, timeout);
+        } else if (diff > 100) {
+            // Clear buffer if pause is too long - manual typing or other keys
+            scanBuffer.current = "";
         }
     }, [onScan, minChars, timeout, enabled]);
 

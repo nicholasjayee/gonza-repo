@@ -71,8 +71,9 @@ export async function getProductAction(identifier: string) {
     if (!auth.authorized) throw new Error("Unauthorized");
 
     try {
+        const { branchId } = await getActiveBranch();
         let product = await ProductService.getById(identifier);
-        if (!product) product = await ProductService.getByBarcode(identifier);
+        if (!product) product = await ProductService.getByBarcode(identifier, branchId);
         if (!product) product = await ProductService.getBySlug(identifier);
 
         return { success: true, data: product };

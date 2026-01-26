@@ -35,9 +35,12 @@ export class ProductService {
         });
     }
 
-    static async getByBarcode(barcode: string) {
-        return db.product.findUnique({
-            where: { barcode },
+    static async getByBarcode(barcode: string, branchId?: string) {
+        return db.product.findFirst({
+            where: {
+                barcode,
+                ...(branchId && { branchId })
+            },
             include: {
                 category: true,
                 supplier: true

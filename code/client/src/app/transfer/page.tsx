@@ -4,10 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Send, Plus, Trash2, Package, Store, MapPin, Search, ChevronRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { getBranchesAction } from '@/branches/api/controller';
-import { getProductsAction } from '@/products/api/controller';
+import { getProductsAction, getProductAction } from '@/products/api/controller';
 import { initiateTransferAction } from '@/inventory/api/transfer-controller';
 import { Product } from '@/products/types';
 import { Branch } from '@/branches/types';
+import { useScanner } from '@/products/hardware/utils/useScanner';
+import { useMessage } from '@/shared/ui/Message';
 
 interface TransferItem {
     product: Product;
@@ -32,24 +34,52 @@ export default function TransferPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
+    const { showMessage, MessageComponent } = useMessage();
+    const [isScanning, setIsScanning] = useState(false);
+
+    const loadData = async () => {
+        const [branchRes, productRes] = await Promise.all([
+            getBranchesAction(),
+            getProductsAction()
+        ]);
+
+        if (branchRes.success) {
+            setBranches(branchRes.data || []);
+            setSourceBranchId(branchRes.activeId || '');
+        }
+        if (productRes.success) {
+            setProducts(productRes.data || []);
+        }
+    };
 
     useEffect(() => {
-        async function loadData() {
-            const [branchRes, productRes] = await Promise.all([
-                getBranchesAction(),
-                getProductsAction()
-            ]);
-
-            if (branchRes.success) {
-                setBranches(branchRes.data || []);
-                setSourceBranchId(branchRes.activeId || '');
-            }
-            if (productRes.success) {
-                setProducts(productRes.data || []);
-            }
-        }
         loadData();
     }, []);
+
+    const handleBarcodeScan = async (barcode: string) => {
+        if (isScanning || isLoading) return;
+        setIsScanning(true);
+        try {
+            const res = await getProductAction(barcode);
+            if (res.success && res.data) {
+                const product = res.data as Product;
+                addItem(product);
+                showMessage('success', `Added ${product.name} to transfer list`);
+            } else {
+                showMessage('error', `Product with barcode ${barcode} not found`);
+            }
+        } catch (error) {
+            console.error("Barcode scan error:", error);
+            showMessage('error', "An error occurred while scanning");
+        } finally {
+            setIsScanning(false);
+        }
+    };
+
+    useScanner({
+        onScan: handleBarcodeScan,
+        enabled: !isLoading && !success
+    });
 
     const filteredProducts = products.filter(p =>
         p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -141,6 +171,8 @@ export default function TransferPage() {
                     </div>
                 </div>
             </div>
+
+            {MessageComponent}
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Left: Configuration & Selection */}
@@ -339,8 +371,8 @@ export default function TransferPage() {
                             disabled={isLoading || items.length === 0 || !targetBranchId}
                             className="w-full h-16 bg-primary text-white font-black text-sm uppercase tracking-widest rounded-3xl hover:opacity-90 transition-all disabled:opacity-50 shadow-xl shadow-primary/20 flex items-center justify-center gap-3 group"
                         >
-                            <Send className={`w-5 h-5 transition-transform group-hover:translate-x-1 ${isLoading ? 'animate-pulse' : ''}`} />
-                            {isLoading ? 'Processing...' : 'Complete Transfer'}
+                            <Send className={`w-5 h-5 transition-transform group-hover:translate-x-1 ${isLoading || isScanning ? 'animate-pulse' : ''}`} />
+                            {isLoading ? 'Processing...' : isScanning ? 'Searching Product...' : 'Complete Transfer'}
                         </button>
                     </div>
                 </div>

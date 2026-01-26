@@ -127,7 +127,7 @@ export function SaleFormClient({ initialData, templates, cashAccounts, userId }:
 
     useScanner({
         onScan: handleBarcodeScan,
-        enabled: !isSubmitting && !isScanning
+        enabled: !isSubmitting
     });
 
     // Calculate totals

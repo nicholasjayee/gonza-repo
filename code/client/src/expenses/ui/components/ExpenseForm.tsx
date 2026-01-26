@@ -4,8 +4,9 @@ import React, { useState } from 'react';
 import { Expense } from '@/expenses/types';
 import { createExpenseAction, updateExpenseAction } from '@/expenses/api/controller';
 import { useMessage } from '@/shared/ui/Message';
-import { Save, Loader2 } from 'lucide-react';
+import { Save, Loader2, Image as ImageIcon, X, Upload } from 'lucide-react';
 import { useSettings } from '@/settings/api/SettingsContext';
+import Image from 'next/image';
 
 interface ExpenseFormProps {
     initialData?: Expense;
@@ -23,6 +24,8 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ initialData, onSuccess
         reference: initialData?.reference || '',
         paymentMethod: initialData?.paymentMethod || 'Cash'
     });
+    const [selectedImage, setSelectedImage] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(initialData?.receiptImage || null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { showMessage, MessageComponent } = useMessage();
 
@@ -30,21 +33,43 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ initialData, onSuccess
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setSelectedImage(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const removeImage = () => {
+        setSelectedImage(null);
+        setImagePreview(null);
+        // If we are editing, we might need a way to track if the user wants to DELETE the existing image.
+        // For now, let's just assume if they don't upload a new one, the old one stays UNLESS we explicitly handle deletion.
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
 
-        const payload = {
-            ...formData,
-            amount: Number(formData.amount),
-            date: new Date(formData.date)
-        };
+        const data = new FormData();
+        Object.entries(formData).forEach(([key, value]) => {
+            data.append(key, value.toString());
+        });
+
+        if (selectedImage) {
+            data.append('receiptImage', selectedImage);
+        }
 
         let res;
         if (initialData) {
-            res = await updateExpenseAction(initialData.id, payload);
+            res = await updateExpenseAction(initialData.id, data);
         } else {
-            res = await createExpenseAction(payload);
+            res = await createExpenseAction(data);
         }
 
         if (res.success) {
@@ -146,6 +171,43 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ initialData, onSuccess
                     className={inputClasses}
                     placeholder="Receipt No, Transaction ID"
                 />
+            </div>
+
+            <div className="space-y-3">
+                <label className={labelClasses}>Receipt Image (Optional)</label>
+                {imagePreview ? (
+                    <div className="relative w-full h-48 rounded-2xl overflow-hidden border border-border bg-muted/20 group">
+                        <Image
+                            src={imagePreview}
+                            alt="Receipt preview"
+                            fill
+                            className="object-contain"
+                        />
+                        <button
+                            type="button"
+                            onClick={removeImage}
+                            className="absolute top-3 right-3 p-2 rounded-xl bg-red-500 text-white shadow-lg hover:scale-110 transition-transform"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+                ) : (
+                    <label className="flex flex-col items-center justify-center w-full h-48 rounded-2xl border-2 border-dashed border-border hover:border-primary hover:bg-primary/5 transition-all cursor-pointer group">
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                <Upload className="w-6 h-6 text-primary" />
+                            </div>
+                            <p className="mb-2 text-sm font-bold text-foreground">Click to upload receipt</p>
+                            <p className="text-xs text-muted-foreground uppercase tracking-widest font-black">PNG, JPG or WEBP</p>
+                        </div>
+                        <input
+                            type="file"
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handleImageChange}
+                        />
+                    </label>
+                )}
             </div>
 
             <div className="flex gap-3 pt-4">

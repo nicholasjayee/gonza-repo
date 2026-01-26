@@ -123,4 +123,47 @@ export class InventoryAnalyticsService {
             totalSales: saleItems.length
         };
     }
+
+    /**
+     * Get detailed stock take data for a specific product by barcode or ID
+     */
+    static async getProductStockTakeData(identifier: string, branchId: string, type: 'barcode' | 'id' = 'barcode') {
+        const product = await db.product.findFirst({
+            where: {
+                [type]: identifier,
+                branchId
+            },
+            select: {
+                id: true,
+                name: true,
+                barcode: true,
+                initialStock: true,
+                stock: true, // current recorded stock
+            }
+        });
+
+        if (!product) throw new Error("Product not found in this branch");
+
+        // Calculate total items sold
+        const saleItems = await db.saleItem.findMany({
+            where: {
+                productId: product.id,
+                sale: {
+                    branchId,
+                    paymentStatus: { not: 'QUOTE' } // Exclude quotes
+                }
+            },
+            select: {
+                quantity: true
+            }
+        });
+
+        const totalSold = saleItems.reduce((sum, item) => sum + item.quantity, 0);
+
+        return {
+            ...product,
+            totalSold,
+            recordedStock: product.stock // Using the current system stock as recorded stock
+        };
+    }
 }

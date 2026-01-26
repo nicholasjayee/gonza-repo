@@ -6,11 +6,40 @@ import { headers, cookies } from 'next/headers';
 import { getActiveBranch } from '@/branches/api/branchContext';
 import { Expense } from '../types';
 
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { env } from '@gonza/shared/config/env';
+
 async function getAuth() {
     const headerList = await headers();
     const cookieStore = await cookies();
     const mockReq = { headers: headerList, cookies: { get: (name: string) => cookieStore.get(name) } } as any;
     return authGuard(mockReq, ['user', 'admin']);
+}
+
+/**
+ * R2 Upload Helper (Internal)
+ */
+async function uploadImageToR2(file: File): Promise<string> {
+    const s3Client = new S3Client({
+        region: 'auto',
+        endpoint: env.R2_ENDPOINT,
+        credentials: {
+            accessKeyId: env.R2_ACCESS_KEY_ID,
+            secretAccessKey: env.R2_SECRET_ACCESS_KEY,
+        },
+    });
+
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const fileName = `receipts/${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
+
+    await s3Client.send(new PutObjectCommand({
+        Bucket: env.R2_BUCKET_NAME,
+        Key: fileName,
+        Body: buffer,
+        ContentType: file.type,
+    }));
+
+    return `${env.R2_PUBLIC_URL}/${fileName}`;
 }
 
 export async function getExpensesAction(filters: {
@@ -47,32 +76,68 @@ export async function getExpensesAction(filters: {
     }
 }
 
-export async function createExpenseAction(data: Omit<Expense, 'id' | 'createdAt' | 'updatedAt' | 'userId' | 'branchId'>) {
+export async function createExpenseAction(formData: FormData) {
     const auth = await getAuth();
     if (!auth.authorized) return { success: false, error: 'Unauthorized' };
     const { branchId } = await getActiveBranch();
     if (!branchId) return { success: false, error: 'No active branch selected' };
 
     try {
+        const amount = Number(formData.get('amount'));
+        const description = formData.get('description') as string;
+        const category = formData.get('category') as string;
+        const date = new Date(formData.get('date') as string);
+        const paymentMethod = formData.get('paymentMethod') as string;
+        const reference = formData.get('reference') as string;
+        const imageFile = formData.get('receiptImage') as File;
+
+        let imageUrl = null;
+        if (imageFile && imageFile.size > 0) {
+            imageUrl = await uploadImageToR2(imageFile);
+        }
+
         const expense = await ExpenseService.create({
-            ...data,
+            amount,
+            description,
+            category,
+            date,
+            paymentMethod: paymentMethod || null,
+            reference: reference || null,
+            receiptImage: imageUrl,
             userId: auth.user.id,
             branchId
         });
         return { success: true, data: expense };
     } catch (error) {
+        console.error('Create Expense Error:', error);
         return { success: false, error: 'Failed to create expense' };
     }
 }
 
-export async function updateExpenseAction(id: string, data: Partial<Expense>) {
+export async function updateExpenseAction(id: string, formData: FormData) {
     const auth = await getAuth();
     if (!auth.authorized) return { success: false, error: 'Unauthorized' };
 
     try {
+        const data: any = {};
+        const fields = ['description', 'category', 'paymentMethod', 'reference'];
+        fields.forEach(field => {
+            const val = formData.get(field);
+            if (val !== null) data[field] = val;
+        });
+
+        if (formData.has('amount')) data.amount = Number(formData.get('amount'));
+        if (formData.has('date')) data.date = new Date(formData.get('date') as string);
+
+        const imageFile = formData.get('receiptImage') as File;
+        if (imageFile && imageFile.size > 0) {
+            data.receiptImage = await uploadImageToR2(imageFile);
+        }
+
         const expense = await ExpenseService.update(id, data);
         return { success: true, data: expense };
     } catch (error) {
+        console.error('Update Expense Error:', error);
         return { success: false, error: 'Failed to update expense' };
     }
 }

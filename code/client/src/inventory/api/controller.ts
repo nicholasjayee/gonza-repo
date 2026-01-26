@@ -164,3 +164,31 @@ export async function updateRequisitionAction(id: string, data: CreateRequisitio
         return { success: false, error: error.message };
     }
 }
+
+export async function getProductByBarcodeForStockTakeAction(barcode: string) {
+    const auth = await getAuth();
+    if (!auth.authorized) throw new Error("Unauthorized");
+    try {
+        const { branchId } = await getActiveBranch();
+        if (!branchId) throw new Error("No branch selected");
+
+        const data = await InventoryAnalyticsService.getProductStockTakeData(barcode, branchId, 'barcode');
+        return { success: true, data: serialize(data) };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function getProductByIdForStockTakeAction(id: string) {
+    const auth = await getAuth();
+    if (!auth.authorized) throw new Error("Unauthorized");
+    try {
+        const { branchId } = await getActiveBranch();
+        if (!branchId) throw new Error("No branch selected");
+
+        const data = await InventoryAnalyticsService.getProductStockTakeData(id, branchId, 'id');
+        return { success: true, data: serialize(data) };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}

@@ -49,7 +49,8 @@ export class ExpenseService {
         const expense = await db.expense.create({
             data: {
                 ...data,
-                amount: data.amount
+                amount: data.amount,
+                receiptImage: data.receiptImage
             }
         });
 
@@ -111,6 +112,7 @@ export class ExpenseService {
                 date: e.date,
                 paymentMethod: e.paymentMethod,
                 reference: e.reference,
+                receiptImage: e.receiptImage,
                 branchId: e.branchId,
                 userId: e.userId,
             }))
@@ -129,6 +131,7 @@ export class ExpenseService {
                     date: data.date,
                     paymentMethod: data.paymentMethod,
                     reference: data.reference,
+                    receiptImage: data.receiptImage,
                 }
             })
         );

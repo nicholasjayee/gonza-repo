@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { LayoutDashboard, BarChart3, Clock, ClipboardList, ShoppingBag, Package, TrendingDown, Info, Plus, FileDown } from 'lucide-react';
+import { LayoutDashboard, BarChart3, Clock, ClipboardList, ShoppingBag, Package, TrendingDown, Info, Plus, FileDown, Scan, Loader2 } from 'lucide-react';
 import { InventoryDashboard } from '../components/InventoryDashboard';
+import { StockTakingTab } from '../components/StockTakingTab';
 import { RequisitionList } from '../components/RequisitionList';
 import { getInventoryOverviewAction, getInventoryMovementsAction, getSalesInventoryAnalysisAction, getRequisitionsAction } from '../../api/controller';
 import { InventoryStats, InventoryMovement } from '../../api/inventory-analytics-service';
@@ -21,7 +22,7 @@ interface InventoryPageProps {
 
 export default function InventoryPage({ branchType, branches = [] }: InventoryPageProps) {
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState<TabType>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'analysis' | 'restocks' | 'requisitions' | 'stock-taking'>('overview');
     const [stats, setStats] = useState<InventoryStats | null>(null);
     const [movements, setMovements] = useState<InventoryMovement[]>([]);
     const [analysis, setAnalysis] = useState<any>(null);
@@ -119,7 +120,7 @@ export default function InventoryPage({ branchType, branches = [] }: InventoryPa
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-2 border-b border-border">
+            <div className="flex gap-2 border-b border-border overflow-x-auto pb-px">
                 <TabButton
                     active={activeTab === 'overview'}
                     onClick={() => setActiveTab('overview')}
@@ -131,6 +132,12 @@ export default function InventoryPage({ branchType, branches = [] }: InventoryPa
                     onClick={() => setActiveTab('analysis')}
                     icon={<BarChart3 className="w-4 h-4" />}
                     label="Items Sold Analysis"
+                />
+                <TabButton
+                    active={activeTab === 'stock-taking'}
+                    onClick={() => setActiveTab('stock-taking')}
+                    icon={<Scan className="w-4 h-4" />}
+                    label="Stock Taking"
                 />
                 <TabButton
                     active={activeTab === 'restocks'}
@@ -150,6 +157,10 @@ export default function InventoryPage({ branchType, branches = [] }: InventoryPa
             <div className="animate-in fade-in duration-500">
                 {activeTab === 'overview' && stats && (
                     <InventoryDashboard stats={stats} />
+                )}
+
+                {activeTab === 'stock-taking' && (
+                    <StockTakingTab />
                 )}
 
                 {activeTab === 'analysis' && analysis && (

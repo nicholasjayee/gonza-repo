@@ -8,6 +8,7 @@ export interface Expense {
     reference?: string | null;
     branchId: string;
     userId: string;
+    receiptImage?: string | null;
     createdAt: Date;
     updatedAt: Date;
 }
