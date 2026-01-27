@@ -225,6 +225,10 @@ export function SaleFormClient({ initialData, templates, cashAccounts, userId }:
                 const res = await searchCustomersByNameAction(customerSearch);
                 if (res.success) {
                     setCustomerResults(res.data || []);
+                    // Proactively tell user this will be a new customer if nothing found and it's not a selection
+                    if ((!res.data || res.data.length === 0) && !selectedCustomer) {
+                        showMessage('info', `"${customerSearch}" not found. They will be added as a new customer automatically.`);
+                    }
                 }
             } else {
                 setCustomerResults([]);
@@ -232,7 +236,7 @@ export function SaleFormClient({ initialData, templates, cashAccounts, userId }:
         }, 300);
 
         return () => clearTimeout(timer);
-    }, [customerSearch]);
+    }, [customerSearch, selectedCustomer]);
 
     // Debounced product search
     useEffect(() => {

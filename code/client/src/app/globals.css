@@ -15,7 +15,7 @@
   --popover: 0 0% 100%;
   --popover-foreground: 200 20% 20%;
   
-  --primary: 242 57% 27%;
+  --primary: 237 45% 26%;
   --primary-foreground: 210 40% 98%;
   
   --secondary: 14 88% 55%;
@@ -37,41 +37,41 @@
   --radius: 0.5rem;
 
   /* Sales Colors */
-  --sales-primary: 237 44% 26%;
+  --sales-primary: 237 45% 26%;
   --sales-secondary: 14 87% 55%;
-  --sales-accent: 185 53% 67%; /* #80CED7 */
+  --sales-accent: 186 53% 67%; /* #80CED7 */
   --sales-light: 195 45% 94%; /* #E8F4F8 */
   --sales-dark: 188 69% 13%; /* #0A2E36 */
 }
 
 .dark {
-  --background: 212 75% 16%; /* #0A2647 */
-  --foreground: 210 40% 98%;
-  
-  --card: 211 70% 26%; /* #144272 */
-  --card-foreground: 210 40% 98%;
-  
-  --popover: 211 70% 26%; /* #144272 */
-  --popover-foreground: 210 40% 98%;
-  
-  --primary: 208 61% 44%; /* #2C74B3 */
+  --background: 200 25% 10%;
+  --foreground: 195 33% 97%;
+
+  --card: 200 25% 15%;
+  --card-foreground: 195 33% 97%;
+
+  --popover: 200 25% 15%;
+  --popover-foreground: 195 33% 97%;
+
+  --primary: 237 45% 26%;
   --primary-foreground: 210 40% 98%;
-  
+
   --secondary: 14 88% 55%;
   --secondary-foreground: 0 0% 100%;
-  
-  --muted: 214 65% 35%; /* #205295 */
-  --muted-foreground: 210 40% 90%;
-  
-  --accent: 214 65% 35%; /* #205295 */
-  --accent-foreground: 210 40% 98%;
-  
+
+  --muted: 200 25% 20%;
+  --muted-foreground: 195 10% 70%;
+
+  --accent: 187 48% 40%;
+  --accent-foreground: 195 33% 97%;
+
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 210 40% 98%;
-  
-  --border: 214 65% 35%; /* #205295 */
-  --input: 214 65% 35%; /* #205295 */
-  --ring: 208 61% 44%; /* #2C74B3 */
+
+  --border: 200 25% 25%;
+  --input: 200 25% 25%;
+  --ring: 242 57% 27%;
 }
 
 @theme inline {

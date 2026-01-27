@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { ThemeProvider } from "@/showcase/ui/components/ThemeToggle";
+import { ThemeProvider } from "@/theme/ThemeProvider";
 
 export const metadata: Metadata = {
   title: "Gonza Systems | Enterprise Business Management",
@@ -15,7 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="antialiased font-sans" suppressHydrationWarning>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <ThemeProvider>
           {children}
         </ThemeProvider>
       </body>

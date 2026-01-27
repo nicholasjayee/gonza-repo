@@ -1,34 +1,15 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { getDashboardMetricsAction, getSubBranchesAction, getDashboardSummariesAction } from '@/dashboard/api/controller';
-import { MetricCard } from '@/dashboard/ui/components/MetricCard';
+import { getSales, getProducts } from '@/dashboard/api/actions';
+import { getSubBranchesAction } from '@/dashboard/api/controller';
+import AnalyticsDashboard from '@/dashboard/ui/components/AnalyticsDashboard';
+import QuickActionButtons from '@/dashboard/ui/components/QuickActionButtons';
+import UpdateNotificationButton from '@/dashboard/ui/components/UpdateNotificationButton';
 import { BranchFilter } from '@/shared/components/BranchFilter';
-import { RecentSalesWidget, LowStockWidget, RecentExpensesWidget, RecentCustomersWidget } from '@/dashboard/ui/components/SummaryWidgets';
-import { DollarSign, ShoppingCart, Package, TrendingDown, Users, AlertTriangle, Loader2, Building2 } from 'lucide-react';
+import { Loader2, Building2, LayoutDashboard } from 'lucide-react';
+import { Sale, Product } from '@/dashboard/types';
 import { useSettings } from '@/settings/api/SettingsContext';
-import Link from 'next/link';
-
-interface DashboardMetrics {
-    totalRevenue: number;
-    salesCount: number;
-    averageOrderValue: number;
-    totalProducts: number;
-    lowStockCount: number;
-    totalInventoryValue: number;
-    totalExpenses: number;
-    expenseCount: number;
-    topExpenseCategory: string;
-    totalCustomers: number;
-    newCustomers: number;
-}
-
-interface DashboardSummaries {
-    recentSales: any[];
-    lowStockProducts: any[];
-    recentExpenses: any[];
-    recentCustomers: any[];
-}
 
 interface Branch {
     id: string;
@@ -41,34 +22,37 @@ interface DashboardPageProps {
 }
 
 export default function DashboardPage({ branchType, branchName }: DashboardPageProps) {
-    const { settings, currency } = useSettings();
-    const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
-    const [summaries, setSummaries] = useState<DashboardSummaries | null>(null);
+    const { settings } = useSettings();
+    const [sales, setSales] = useState<Sale[]>([]);
+    const [products, setProducts] = useState<Product[]>([]);
     const [branches, setBranches] = useState<Branch[]>([]);
     const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
+
+    // Mock update state for now
+    const [updateAvailable, setUpdateAvailable] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
 
     const activeBranch = branches.find(b => b.id === selectedBranchId);
     const dashboardTitle = branchType === 'MAIN'
         ? (activeBranch ? activeBranch.name : 'All Branches')
         : (branchName || settings.businessName || 'Dashboard');
 
-    useEffect(() => {
-        if (branchType === 'MAIN') {
-            loadBranches();
-        }
-        loadDashboard();
-    }, [branchType]);
+    const handleQuickCreate = (type: 'Paid' | 'NOT PAID' | 'Quote' | 'Installment Sale') => {
+        console.log(`Quick create: ${type}`);
+        // TODO: Implement navigation or modal opening based on type
+    };
 
-    useEffect(() => {
-        // Refresh dashboard when filter changes (only for MAIN)
-        if (branchType === 'MAIN' && (branches.length > 0 || selectedBranchId !== null)) {
-            loadDashboard();
-        }
-    }, [selectedBranchId]);
+    const handleUpdate = () => {
+        setIsUpdating(true);
+        setTimeout(() => {
+            setIsUpdating(false);
+            setUpdateAvailable(false);
+        }, 2000);
+    };
 
-    const loadBranches = async () => {
+    const loadBranches = React.useCallback(async () => {
         try {
             const branchesRes = await getSubBranchesAction();
             if (branchesRes.success && branchesRes.data) {
@@ -77,34 +61,43 @@ export default function DashboardPage({ branchType, branchName }: DashboardPageP
         } catch (error) {
             console.error("Failed to load branches:", error);
         }
-    };
+    }, []);
 
-    const loadDashboard = async () => {
+    const loadData = React.useCallback(async () => {
         setIsRefreshing(true);
-        if (!metrics) setIsLoading(true);
+        if (sales.length === 0) setIsLoading(true);
 
         try {
-            const [metricsRes, summariesRes] = await Promise.all([
-                getDashboardMetricsAction(selectedBranchId || undefined),
-                getDashboardSummariesAction(selectedBranchId || undefined)
+            const [salesData, productsData] = await Promise.all([
+                getSales(undefined, undefined, selectedBranchId || undefined),
+                getProducts(selectedBranchId || undefined)
             ]);
 
-            if (metricsRes.success && metricsRes.data) {
-                setMetrics(metricsRes.data as DashboardMetrics);
-            }
-
-            if (summariesRes.success && summariesRes.data) {
-                setSummaries(summariesRes.data as DashboardSummaries);
-            }
+            setSales(salesData);
+            setProducts(productsData);
         } catch (error) {
-            console.error("Failed to load dashboard:", error);
+            console.error("Failed to load dashboard data:", error);
         } finally {
             setIsLoading(false);
             setIsRefreshing(false);
         }
-    };
+    }, [sales.length, selectedBranchId]);
 
-    if (isLoading && !metrics) {
+    useEffect(() => {
+        if (branchType === 'MAIN') {
+            loadBranches();
+        }
+        loadData();
+    }, [branchType, loadBranches, loadData]);
+
+    useEffect(() => {
+        // Refresh data when branch filter changes (only for MAIN)
+        if (branchType === 'MAIN' && (branches.length > 0 || selectedBranchId !== null)) {
+            loadData();
+        }
+    }, [selectedBranchId, branchType, branches.length, loadData]);
+
+    if (isLoading && sales.length === 0) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
@@ -146,164 +139,24 @@ export default function DashboardPage({ branchType, branchName }: DashboardPageP
                 )}
             </div>
 
-            {metrics && (
-                <>
-                    {/* Sales Metrics */}
-                    <div>
-                        <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-4 px-2">Sales Performance</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <MetricCard
-                                title="Total Revenue"
-                                value={`${currency} ${metrics.totalRevenue.toLocaleString()}`}
-                                icon={DollarSign}
-                                subtitle={`${metrics.salesCount} transactions`}
-                                iconColor="text-emerald-600"
-                            />
-                            <MetricCard
-                                title="Sales Count"
-                                value={metrics.salesCount.toLocaleString()}
-                                icon={ShoppingCart}
-                                subtitle="Completed orders"
-                                iconColor="text-blue-600"
-                            />
-                            <MetricCard
-                                title="Average Order"
-                                value={`${currency} ${Math.round(metrics.averageOrderValue).toLocaleString()}`}
-                                icon={TrendingDown}
-                                subtitle="Per transaction"
-                                iconColor="text-purple-600"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Inventory & Customer Metrics */}
-                    <div>
-                        <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-4 px-2">Inventory & Customers</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                            <MetricCard
-                                title="Total Products"
-                                value={metrics.totalProducts.toLocaleString()}
-                                icon={Package}
-                                subtitle="In inventory"
-                                iconColor="text-indigo-600"
-                            />
-                            <MetricCard
-                                title="Low Stock Items"
-                                value={metrics.lowStockCount.toLocaleString()}
-                                icon={AlertTriangle}
-                                subtitle="Need restocking"
-                                iconColor="text-orange-600"
-                                bgColor={metrics.lowStockCount > 0 ? "bg-orange-500/5" : "bg-card"}
-                            />
-                            <MetricCard
-                                title="Inventory Value"
-                                value={`${currency} ${metrics.totalInventoryValue.toLocaleString()}`}
-                                icon={DollarSign}
-                                subtitle="Total stock value"
-                                iconColor="text-emerald-600"
-                            />
-                            <MetricCard
-                                title="Total Customers"
-                                value={metrics.totalCustomers.toLocaleString()}
-                                icon={Users}
-                                subtitle={`${metrics.newCustomers} new (30d)`}
-                                iconColor="text-pink-600"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Expense Metrics */}
-                    <div>
-                        <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-4 px-2">Expenses</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <MetricCard
-                                title="Total Expenses"
-                                value={`${currency} ${metrics.totalExpenses.toLocaleString()}`}
-                                icon={TrendingDown}
-                                subtitle={`${metrics.expenseCount} transactions`}
-                                iconColor="text-red-600"
-                                bgColor="bg-red-500/5"
-                            />
-                            <div className="md:col-span-2 bg-card border border-border rounded-[2rem] p-6 shadow-sm flex items-center justify-between">
-                                <div>
-                                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Top Expense Category</p>
-                                    <h3 className="text-2xl font-black tracking-tight">{metrics.topExpenseCategory}</h3>
-                                </div>
-                                {branchType === 'SUB' && (
-                                    <Link
-                                        href="/expenses"
-                                        className="px-6 py-2.5 bg-primary text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:opacity-90 transition-opacity"
-                                    >
-                                        View Details
-                                    </Link>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Activity Overview */}
-                    {summaries && (
-                        <div>
-                            <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-4 px-2">
-                                {branchType === 'MAIN' ? 'Activity Highlights' : 'Recent Activity'}
-                            </h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <RecentSalesWidget sales={summaries.recentSales} />
-                                <LowStockWidget products={summaries.lowStockProducts} />
-                                <RecentExpensesWidget expenses={summaries.recentExpenses} />
-                                <RecentCustomersWidget customers={summaries.recentCustomers} />
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Quick Actions (only for operational view) */}
-                    {branchType === 'SUB' && (
-                        <div className="bg-muted/30 border border-border rounded-[2rem] p-8">
-                            <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-6">Quick Actions</h2>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <Link href="/sales/new" className="p-4 bg-card border border-border rounded-xl hover:bg-muted/50 transition-colors text-center">
-                                    <ShoppingCart className="w-6 h-6 mx-auto mb-2 text-primary" />
-                                    <p className="text-xs font-bold">New Sale</p>
-                                </Link>
-                                <Link href="/products" className="p-4 bg-card border border-border rounded-xl hover:bg-muted/50 transition-colors text-center">
-                                    <Package className="w-6 h-6 mx-auto mb-2 text-primary" />
-                                    <p className="text-xs font-bold">Manage Products</p>
-                                </Link>
-                                <Link href="/expenses" className="p-4 bg-card border border-border rounded-xl hover:bg-muted/50 transition-colors text-center">
-                                    <TrendingDown className="w-6 h-6 mx-auto mb-2 text-primary" />
-                                    <p className="text-xs font-bold">Record Expense</p>
-                                </Link>
-                                <Link href="/customers" className="p-4 bg-card border border-border rounded-xl hover:bg-muted/50 transition-colors text-center">
-                                    <Users className="w-6 h-6 mx-auto mb-2 text-primary" />
-                                    <p className="text-xs font-bold">View Customers</p>
-                                </Link>
-                            </div>
-                        </div>
-                    )}
-                </>
+            {/* Update Notification */}
+            {updateAvailable && (
+                <UpdateNotificationButton
+                    onUpdate={handleUpdate}
+                    isUpdating={isUpdating}
+                />
             )}
+
+            {/* Quick Actions */}
+            <QuickActionButtons onQuickCreate={handleQuickCreate} />
+
+            <AnalyticsDashboard
+                sales={sales}
+                products={products}
+                currency="UGX"
+                branchId={selectedBranchId || undefined}
+            />
         </div>
     );
 }
 
-function LayoutDashboard({ className }: { className?: string }) {
-    return (
-        <svg
-            className={className}
-            fill="none"
-            height="24"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-            width="24"
-            xmlns="http://www.w3.org/2000/svg"
-        >
-            <rect height="9" width="9" x="3" y="3" />
-            <rect height="5" width="9" x="12" y="3" />
-            <rect height="9" width="9" x="12" y="12" />
-            <rect height="5" width="9" x="3" y="15" />
-        </svg>
-    )
-}
