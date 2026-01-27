@@ -37,16 +37,22 @@ interface Branch {
 
 interface DashboardPageProps {
     branchType: 'MAIN' | 'SUB';
+    branchName?: string;
 }
 
-export default function DashboardPage({ branchType }: DashboardPageProps) {
-    const { currency } = useSettings();
+export default function DashboardPage({ branchType, branchName }: DashboardPageProps) {
+    const { settings, currency } = useSettings();
     const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
     const [summaries, setSummaries] = useState<DashboardSummaries | null>(null);
     const [branches, setBranches] = useState<Branch[]>([]);
     const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
+
+    const activeBranch = branches.find(b => b.id === selectedBranchId);
+    const dashboardTitle = branchType === 'MAIN'
+        ? (activeBranch ? activeBranch.name : 'All Branches')
+        : (branchName || settings.businessName || 'Dashboard');
 
     useEffect(() => {
         if (branchType === 'MAIN') {
@@ -117,14 +123,14 @@ export default function DashboardPage({ branchType }: DashboardPageProps) {
                         </div>
                         <div className="flex items-center gap-3">
                             <h1 className="text-4xl font-black italic tracking-tight">
-                                {branchType === 'MAIN' ? 'Branch Overview' : 'Dashboard'}
+                                {dashboardTitle}
                             </h1>
                             {isRefreshing && <Loader2 className="w-5 h-5 text-primary animate-spin" />}
                         </div>
                     </div>
                     <p className="text-sm text-muted-foreground font-medium">
                         {branchType === 'MAIN'
-                            ? (!selectedBranchId ? 'Company-wide metrics across all branches' : 'Filtered branch performance')
+                            ? (!selectedBranchId ? 'Company-wide metrics across all branches' : `Performance overview for ${activeBranch?.name}`)
                             : 'Your branch performance overview'}
                     </p>
                 </div>

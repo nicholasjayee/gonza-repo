@@ -88,6 +88,71 @@ export function SaleFormClient({ initialData, templates, cashAccounts, userId }:
     const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
     const [messageChannel, setMessageChannel] = useState<'sms' | 'whatsapp' | 'both'>('whatsapp');
 
+    const [isLoaded, setIsLoaded] = useState(false);
+    const STORAGE_KEY = 'gz-pos-sale-draft';
+
+    // Load draft on mount
+    useEffect(() => {
+        if (!isEdit) {
+            const savedDraft = localStorage.getItem(STORAGE_KEY);
+            if (savedDraft) {
+                try {
+                    const d = JSON.parse(savedDraft);
+                    if (d.customerSearch) setCustomerSearch(d.customerSearch);
+                    if (d.selectedCustomer) setSelectedCustomer(d.selectedCustomer);
+                    if (d.customerPhone) setCustomerPhone(d.customerPhone);
+                    if (d.customerAddress) setCustomerAddress(d.customerAddress);
+                    if (d.items) setItems(d.items);
+                    if (d.source) setSource(d.source);
+                    if (d.discount) setDiscount(d.discount);
+                    if (d.discountType) setDiscountType(d.discountType);
+                    if (d.taxRate) setTaxRate(d.taxRate);
+                    if (d.paymentStatus) setPaymentStatus(d.paymentStatus);
+                    if (d.amountPaid) setAmountPaid(d.amountPaid);
+                    if (d.cashAccountId) setCashAccountId(d.cashAccountId);
+                    if (d.sendThankYou) setSendThankYou(d.sendThankYou);
+                    if (d.selectedTemplateId) setSelectedTemplateId(d.selectedTemplateId);
+                    if (d.messageChannel) setMessageChannel(d.messageChannel);
+                } catch (e) {
+                    console.error("Error parsing sales draft:", e);
+                }
+            }
+        }
+        setIsLoaded(true);
+    }, [isEdit]);
+
+    // Save draft on change
+    useEffect(() => {
+        if (!isEdit && isLoaded) {
+            const draft = {
+                customerSearch,
+                selectedCustomer,
+                customerPhone,
+                customerAddress,
+                items,
+                source,
+                discount,
+                discountType,
+                taxRate,
+                paymentStatus,
+                amountPaid,
+                cashAccountId,
+                sendThankYou,
+                selectedTemplateId,
+                messageChannel
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+        }
+    }, [
+        isEdit, isLoaded, customerSearch, selectedCustomer, customerPhone, customerAddress,
+        items, source, discount, discountType, taxRate, paymentStatus,
+        amountPaid, cashAccountId, sendThankYou, selectedTemplateId, messageChannel
+    ]);
+
+    const clearDraft = () => {
+        localStorage.removeItem(STORAGE_KEY);
+    };
+
     // Initialize defaults
     useEffect(() => {
         if (userId && !isEdit) {
@@ -153,33 +218,49 @@ export function SaleFormClient({ initialData, templates, cashAccounts, userId }:
         }
     }, [paymentStatus, total]);
 
-    const handleCustomerSearch = async (query: string) => {
-        setCustomerSearch(query);
-        if (query.length > 1) {
-            const res = await searchCustomersByNameAction(query);
-            if (res.success) {
-                setCustomerResults(res.data || []);
+    // Debounced customer search
+    useEffect(() => {
+        const timer = setTimeout(async () => {
+            if (customerSearch.length > 1) {
+                const res = await searchCustomersByNameAction(customerSearch);
+                if (res.success) {
+                    setCustomerResults(res.data || []);
+                }
+            } else {
+                setCustomerResults([]);
             }
-        } else {
-            setCustomerResults([]);
-        }
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [customerSearch]);
+
+    // Debounced product search
+    useEffect(() => {
+        const timer = setTimeout(async () => {
+            if (productSearch.length > 1) {
+                const res = await getProductsAction();
+                if (res.success) {
+                    const filtered = (res.data as Product[] || []).filter(p =>
+                        p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
+                        p.barcode?.includes(productSearch) ||
+                        p.sku?.includes(productSearch)
+                    );
+                    setProductResults(filtered.slice(0, 10));
+                }
+            } else {
+                setProductResults([]);
+            }
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [productSearch]);
+
+    const handleCustomerSearch = (query: string) => {
+        setCustomerSearch(query);
     };
 
-    const handleProductSearch = async (query: string) => {
+    const handleProductSearch = (query: string) => {
         setProductSearch(query);
-        if (query.length > 1) {
-            const res = await getProductsAction();
-            if (res.success) {
-                const filtered = (res.data as Product[] || []).filter(p =>
-                    p.name.toLowerCase().includes(query.toLowerCase()) ||
-                    p.barcode?.includes(query) ||
-                    p.sku?.includes(query)
-                );
-                setProductResults(filtered.slice(0, 10));
-            }
-        } else {
-            setProductResults([]);
-        }
     };
 
     const addProductToSale = (product: Product) => {
@@ -356,6 +437,9 @@ export function SaleFormClient({ initialData, templates, cashAccounts, userId }:
                     });
                 }
 
+                if (!isEdit) {
+                    clearDraft();
+                }
                 setTimeout(() => {
                     router.push('/sales');
                 }, 1500);

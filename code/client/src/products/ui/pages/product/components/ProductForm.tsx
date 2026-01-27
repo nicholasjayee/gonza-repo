@@ -40,6 +40,37 @@ export function ProductForm({ initialData, onSubmit, onCancel, isSubmitting }: P
     const [printOnSave, setPrintOnSave] = useState(true);
     const { showMessage, MessageComponent } = useMessage();
 
+    const [isLoaded, setIsLoaded] = useState(false);
+    const STORAGE_KEY = 'gz-product-form-draft';
+
+    // Load draft on mount
+    useEffect(() => {
+        if (!initialData?.id) { // Only for new products
+            const savedDraft = localStorage.getItem(STORAGE_KEY);
+            if (savedDraft) {
+                try {
+                    const parsed = JSON.parse(savedDraft);
+                    setFormData(prev => ({ ...prev, ...parsed }));
+                } catch (e) {
+                    console.error("Error parsing product draft:", e);
+                }
+            }
+        }
+        setIsLoaded(true);
+    }, [initialData?.id]);
+
+    // Save draft on change
+    useEffect(() => {
+        if (!initialData?.id && isLoaded) {
+            // Don't save image preview to localStorage (too large)
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+        }
+    }, [formData, initialData?.id, isLoaded]);
+
+    const clearDraft = () => {
+        localStorage.removeItem(STORAGE_KEY);
+    };
+
     useEffect(() => {
         const fetchMeta = async () => {
             const [catRes, supRes] = await Promise.all([
@@ -162,6 +193,7 @@ export function ProductForm({ initialData, onSubmit, onCancel, isSubmitting }: P
 
         try {
             await onSubmit(data, printOnSave);
+            clearDraft();
         } catch (error) {
             console.error("Form submission error:", error);
         }

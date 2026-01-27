@@ -1,12 +1,22 @@
 import { Metadata } from "next";
 import { getActiveBranch } from "@/branches/api/branchContext";
+import { getBranchAction } from "@/branches/api/controller";
 import DashboardPage from "@/dashboard/ui/pages/DashboardPage";
 
 export const metadata: Metadata = {
-    // ... (metadata unchanged)
+    title: "Dashboard | Gonza Systems",
 };
 
 export default async function Page() {
-    const { branchType } = await getActiveBranch();
-    return <DashboardPage branchType={branchType as any} />;
+    const { branchId, branchType } = await getActiveBranch();
+
+    let branchName = "";
+    if (branchId) {
+        const branchRes = await getBranchAction(branchId);
+        if (branchRes.success && branchRes.data) {
+            branchName = (branchRes.data as any).name;
+        }
+    }
+
+    return <DashboardPage branchType={branchType as any} branchName={branchName} />;
 }
