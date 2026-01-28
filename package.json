@@ -1,0 +1,26 @@
+{
+    "name": "gonza-workspace",
+    "version": "1.0.0",
+    "private": true,
+    "workspaces": [
+        "code/client",
+        "code/admin",
+        "code/auth",
+        "code/website",
+        "code/shared"
+    ],
+    "scripts": {
+        "dev": "dotenv -e code/shared/.env -- concurrently -n \"WEB,AUTH,CLIENT,ADMIN\" -c \"bgYellow.bold,bgMagenta.bold,bgBlue.bold,bgCyan.bold\" \"npm run dev:website\" \"npm run dev:auth\" \"npm run dev:client\" \"npm run dev:admin\"",
+        "dev:website": "cd code/website && npm run dev -- -p 3000",
+        "dev:auth": "cd code/auth && npm run dev -- -p 3001",
+        "dev:client": "cd code/client && npm run dev -- -p 3002",
+        "dev:admin": "cd code/admin && npm run dev -- -p 3003",
+        "db:push": "cd code/shared && npx prisma db push",
+        "db:generate": "cd code/shared && npx prisma generate",
+        "db:seed": "cd code/shared && npx prisma db seed"
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2",
+        "dotenv-cli": "^11.0.0"
+    }
+}
