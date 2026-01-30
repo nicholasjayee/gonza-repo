@@ -7,9 +7,54 @@ import { ProductFormData } from "@/inventory/types/";
 import { toast } from "sonner";
 
 export const useBulkProducts = () => {
-  const { createProduct } = useProducts();
+  const { createProduct, deleteProduct } = useProducts();
   const { categories, createCategory } = useCategories();
   const [isUploading, setIsUploading] = useState(false);
+  
+  // Selection state for bulk actions
+  const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set());
+
+  const toggleProductSelection = (productId: string) => {
+    setSelectedProductIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(productId)) {
+        newSet.delete(productId);
+      } else {
+        newSet.add(productId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleAllProducts = (productIds: string[]) => {
+    setSelectedProductIds((prev) => {
+      if (prev.size === productIds.length) {
+        return new Set();
+      }
+      return new Set(productIds);
+    });
+  };
+
+  const clearSelection = () => {
+    setSelectedProductIds(new Set());
+  };
+
+  const bulkDeleteProducts = async (ids: Set<string>) => {
+    let successCount = 0;
+    let failCount = 0;
+    
+    for (const id of Array.from(ids)) {
+      const success = await deleteProduct(id);
+      if (success) successCount++;
+      else failCount++;
+    }
+
+    if (failCount > 0) {
+      toast.error(`Failed to delete ${failCount} products`);
+    }
+    
+    return successCount > 0;
+  };
 
   const createMissingCategories = async (productCategories: string[]) => {
     const existingCategoryNames = categories.map((cat) =>
@@ -47,7 +92,6 @@ export const useBulkProducts = () => {
     progressCallback?: (current: number, total: number) => void,
   ) => {
     // Auth check handled by server actions
-
 
     setIsUploading(true);
     let successCount = 0;
@@ -133,5 +177,10 @@ export const useBulkProducts = () => {
     bulkCreateProducts,
     detectNewCategories,
     isUploading,
+    selectedProductIds,
+    toggleProductSelection,
+    toggleAllProducts,
+    clearSelection,
+    bulkDeleteProducts
   };
 };

@@ -74,7 +74,7 @@ const InventoryHeader: React.FC<InventoryHeaderProps> = ({
                 <ListFilter size={14} /> Products
               </Button>
               <Button
-                onClick={() => router.push("/inventory/restock")}
+                onClick={() => router.push("/inventory/carriage-inwards")}
                 variant="outline"
                 className="gap-1 text-xs min-h-[40px]"
               >
@@ -132,7 +132,7 @@ const InventoryHeader: React.FC<InventoryHeaderProps> = ({
               <FileUp size={16} /> Upload CSV
             </Button>
             <Button
-                onClick={() => router.push("/inventory/restock")}
+                onClick={() => router.push("/inventory/carriage-inwards")}
                 variant="outline"
                 className="gap-2"
               >
