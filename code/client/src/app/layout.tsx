@@ -21,9 +21,13 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { branchType } = await getActiveBranch();
-  const settingsRes = await getSettingsAction();
-  const initialSettings = settingsRes.success ? settingsRes.data : {};
+  const { branchId, branchType } = await getActiveBranch();
+  
+  let initialSettings = {};
+  if (branchId) {
+    const settingsRes = await getSettingsAction();
+    initialSettings = settingsRes.success ? settingsRes.data : {};
+  }
 
   return (
     <html lang="en" suppressHydrationWarning>

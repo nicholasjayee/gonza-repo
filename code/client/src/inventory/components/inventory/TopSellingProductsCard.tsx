@@ -1,0 +1,84 @@
+import React from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/inventory/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/inventory/components/ui/select";
+import TopSellingProductsTable from "@/inventory/components/inventory/TopSellingProductsTable";
+import { Product } from "@/inventory/types/";
+
+interface TopSellingProductsCardProps {
+  topSellingProducts: (Product & { soldQuantity: number })[];
+  period:
+    | "today"
+    | "yesterday"
+    | "this-week"
+    | "last-week"
+    | "this-month"
+    | "last-month"
+    | "all-time";
+  onPeriodChange: (
+    period:
+      | "today"
+      | "yesterday"
+      | "this-week"
+      | "last-week"
+      | "this-month"
+      | "last-month"
+      | "all-time",
+  ) => void;
+}
+
+const TopSellingProductsCard: React.FC<TopSellingProductsCardProps> = ({
+  topSellingProducts,
+  period,
+  onPeriodChange,
+}) => {
+  return (
+    <Card className="shadow-sm border-t-0 bg-white">
+      <CardHeader className="pb-3 md:pb-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <CardTitle className="text-base md:text-lg">
+            Top Selling Products
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Period:</span>
+            <Select
+              value={period}
+              onValueChange={(value) => onPeriodChange(value as typeof period)}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="today">Today</SelectItem>
+                <SelectItem value="yesterday">Yesterday</SelectItem>
+                <SelectItem value="this-week">This Week</SelectItem>
+                <SelectItem value="last-week">Last Week</SelectItem>
+                <SelectItem value="this-month">This Month</SelectItem>
+                <SelectItem value="last-month">Last Month</SelectItem>
+                <SelectItem value="all-time">All Time</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <TopSellingProductsTable
+          products={topSellingProducts}
+          period={period}
+        />
+      </CardContent>
+    </Card>
+  );
+};
+
+export default TopSellingProductsCard;

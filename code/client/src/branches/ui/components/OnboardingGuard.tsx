@@ -46,9 +46,14 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
                         || branches.find((b: Branch) => b.type === 'MAIN')
                         || branches[0];
 
-                    if (branchToUnlock.accessPassword) {
+                if (branchToUnlock.accessPassword) {
                         setPasswordPrompt({ isOpen: true, branch: branchToUnlock });
                         return;
+                    } else {
+                        // Auto-select/verify if no password is required
+                        await switchBranchAction(branchToUnlock.id, branchToUnlock.type);
+                        // Refresh to ensure cookies are picked up by server components immediately if needed
+                         router.refresh(); 
                     }
                 }
 
