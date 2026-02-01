@@ -4,7 +4,7 @@ import React from 'react';
 import { Expense } from '@/expenses/types';
 import { Edit2, Trash2, Calendar, Tag, FileText } from 'lucide-react';
 import { format } from 'date-fns';
-import { useSettings } from '@/settings/api/SettingsContext';
+import { useSettings } from '@/components/settings/api/SettingsContext';
 
 interface ExpenseListProps {
     expenses: Expense[];

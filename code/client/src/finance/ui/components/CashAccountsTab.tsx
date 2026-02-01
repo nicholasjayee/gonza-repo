@@ -5,7 +5,7 @@ import { Plus, Wallet, TrendingUp, Eye, Pencil, Trash2 } from 'lucide-react';
 import { getCashAccountsAction, deleteCashAccountAction } from '@/finance/api/controller';
 import { CashAccountForm } from './CashAccountForm';
 import { useMessage } from '@/shared/ui/Message';
-import { useSettings } from '@/settings/api/SettingsContext';
+import { useSettings } from '@/components/settings/api/SettingsContext';
 
 interface CashAccount {
     id: string;

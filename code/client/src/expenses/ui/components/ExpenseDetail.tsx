@@ -4,7 +4,7 @@ import React from 'react';
 import { Expense } from '@/expenses/types';
 import { Calendar, Tag, CreditCard, FileText, User, Clock, DollarSign, Image as ImageIcon, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
-import { useSettings } from '@/settings/api/SettingsContext';
+import { useSettings } from '@/components/settings/api/SettingsContext';
 import Image from 'next/image';
 
 interface ExpenseDetailProps {

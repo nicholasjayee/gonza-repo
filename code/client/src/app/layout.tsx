@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/shared/components/Sidebar";
 import { Topbar } from "@/shared/components/Topbar";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Client Portal | Gonza Systems",
@@ -26,7 +29,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const { branchId, branchType } = await getActiveBranch();
-  
+
   let initialSettings: Partial<BranchSettings> = {};
   if (branchId) {
     const settingsRes = await getSettingsAction();
@@ -35,7 +38,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="antialiased font-sans" suppressHydrationWarning>
+      <body className={`antialiased ${inter.className}`} suppressHydrationWarning>
         <ThemeProvider>
           <OnboardingGuard>
             <SettingsProvider initialSettings={initialSettings}>

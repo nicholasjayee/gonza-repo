@@ -5,7 +5,7 @@ import { Expense } from '@/expenses/types';
 import { createExpenseAction, updateExpenseAction } from '@/expenses/api/controller';
 import { useMessage } from '@/shared/ui/Message';
 import { Save, Loader2, Image as ImageIcon, X, Upload } from 'lucide-react';
-import { useSettings } from '@/settings/api/SettingsContext';
+import { useSettings } from '@/components/settings/api/SettingsContext';
 import Image from 'next/image';
 
 interface ExpenseFormProps {

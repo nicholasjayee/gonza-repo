@@ -6,7 +6,7 @@ import { Trash2, Loader2, Eye, Pencil, Printer, Package } from "lucide-react";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { Product } from "@/products/types";
 import { printBarcode } from "@/products/hardware/utils/print";
-import { useSettings } from "@/settings/api/SettingsContext";
+import { useSettings } from "@/components/settings/api/SettingsContext";
 
 interface ProductsTableProps {
   products: Product[];

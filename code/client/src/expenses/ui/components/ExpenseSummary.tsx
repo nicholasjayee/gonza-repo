@@ -3,7 +3,7 @@
 import React from 'react';
 import { Expense } from '@/expenses/types';
 import { TrendingDown, Wallet, PieChart, ArrowUpRight } from 'lucide-react';
-import { useSettings } from '@/settings/api/SettingsContext';
+import { useSettings } from '@/components/settings/api/SettingsContext';
 
 interface ExpenseSummaryProps {
     expenses: Expense[];

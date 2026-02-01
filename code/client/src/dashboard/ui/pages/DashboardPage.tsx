@@ -9,7 +9,7 @@ import UpdateNotificationButton from '@/dashboard/ui/components/UpdateNotificati
 import { BranchFilter } from '@/shared/components/BranchFilter';
 import { Loader2, Building2, LayoutDashboard } from 'lucide-react';
 import { Sale, Product } from '@/dashboard/types';
-import { useSettings } from '@/settings/api/SettingsContext';
+import { useSettings } from '@/components/settings/api/SettingsContext';
 
 interface Branch {
     id: string;
