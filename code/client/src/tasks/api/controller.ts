@@ -6,7 +6,7 @@ import { db } from '@gonza/shared/prisma/db';
 import { headers, cookies } from 'next/headers';
 import { getActiveBranch } from '@/branches/api/branchContext';
 import { serialize } from '@/shared/utils/serialize';
-import { TaskStatus } from '@prisma/client';
+import { TaskStatus } from '@gonza/shared/prisma/db';
 
 async function getAuth() {
     const headerList = await headers();

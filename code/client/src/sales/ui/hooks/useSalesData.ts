@@ -1,5 +1,7 @@
+"use client";
+
 import { useState, useEffect } from 'react';
-import { Sale } from '../types';
+import { Sale } from '@/sales/types';
 
 export function useSalesData() {
     const [sales, setSales] = useState<Sale[]>([]);
@@ -13,8 +15,8 @@ export function useSalesData() {
                 if (!response.ok) throw new Error('Failed to fetch sales');
                 const data = await response.json();
                 setSales(data);
-            } catch (err: any) {
-                setError(err.message);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'An error occurred');
             } finally {
                 setLoading(false);
             }

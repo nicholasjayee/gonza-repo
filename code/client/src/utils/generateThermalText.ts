@@ -1,7 +1,27 @@
 import { format } from "date-fns";
 import { formatNumber } from "@/lib/utils";
 import { numberToWords } from "@/utils/numberToWords";
-import { parsePaymentInfo } from "@/inventory/hooks/useBusinessSettings";
+
+interface PaymentMethod {
+  method: string;
+  accountNumber: string;
+  accountName: string;
+}
+
+// Fallback helper to parse legacy payment info strings or JSON
+function parsePaymentInfo(paymentInfo: unknown): PaymentMethod[] {
+  if (!paymentInfo) return [];
+  if (Array.isArray(paymentInfo)) return paymentInfo as PaymentMethod[];
+  if (typeof paymentInfo === 'string') {
+    try {
+      const parsed = JSON.parse(paymentInfo);
+      return Array.isArray(parsed) ? (parsed as PaymentMethod[]) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
 
 // Helpers
 function padRight(text: string, width: number) {
@@ -21,7 +41,9 @@ function centerText(text: string, width: number = 32) {
   return " ".repeat(padding) + text;
 }
 
-export function generateThermalText(sale: any, settings: any, currency?: string) {
+import { Sale, BusinessSettings } from '@/inventory/types/index';
+
+export function generateThermalText(sale: Sale, settings: BusinessSettings, currency?: string) {
   const displayCurrency = currency || settings.currency || '';
   const line = "-".repeat(32);
   const doubleLine = "=".repeat(32); 
@@ -65,7 +87,8 @@ export function generateThermalText(sale: any, settings: any, currency?: string)
   let subtotalBeforeDiscount = 0;
   let totalDiscountAmount = 0;
 
-  Array.isArray(sale.items) && sale.items.forEach((item: any) => {
+  if (Array.isArray(sale.items)) {
+    sale.items.forEach((item) => {
     const quantity = item.quantity || 0;
     const price = item.price || 0;
     const subtotal = quantity * price;
@@ -81,6 +104,7 @@ export function generateThermalText(sale: any, settings: any, currency?: string)
       text += padRight(`Discount ${discText}`, 16) + padLeft("", 6) + padLeft(`-${formatNumber(discount)}`, 10) + "\n";
     }
   });
+  }
 
   text += line + "\n";
 
@@ -114,7 +138,7 @@ export function generateThermalText(sale: any, settings: any, currency?: string)
   // ===== Payment Info (Side by Side) =====
   const paymentMethods = settings.paymentInfo ? parsePaymentInfo(settings.paymentInfo) : [];
   if (Array.isArray(paymentMethods) && paymentMethods.length > 0) {
-    paymentMethods.forEach((p: any) => {
+    paymentMethods.forEach((p: PaymentMethod) => {
       if (p.method || p.accountNumber || p.accountName) {
         // Method centered
         text += centerText(p.method || '') + "\n";

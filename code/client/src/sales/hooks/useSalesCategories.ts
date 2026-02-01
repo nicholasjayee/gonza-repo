@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from 'react';
 
 export interface SalesCategory {
@@ -34,9 +36,35 @@ export const useSalesCategories = () => {
     loadCategories();
   }, []);
 
+  const createCategory = async (name: string) => {
+    // Mock implementation
+    const newCategory: SalesCategory = {
+      id: Math.random().toString(36).substr(2, 9),
+      name,
+      isDefault: false,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    setCategories([...categories, newCategory]);
+    return newCategory;
+  };
+
+  const updateCategory = async (id: string, name: string) => {
+    // Mock implementation
+    setCategories(categories.map(c => c.id === id ? { ...c, name } : c));
+  };
+
+  const deleteCategory = async (id: string) => {
+      // Mock implementation
+      setCategories(categories.filter(c => c.id !== id));
+  };
+
   return {
     categories,
     isLoading,
-    loadCategories
+    loadCategories,
+    createCategory,
+    updateCategory,
+    deleteCategory
   };
 };

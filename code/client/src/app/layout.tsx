@@ -13,8 +13,12 @@ import { ThemeProvider } from "@/shared/theme/ThemeProvider";
 import { BranchSwitcher } from "@/branches/ui/components/BranchSwitcher";
 import { getActiveBranch } from "@/branches/api/branchContext";
 import { OnboardingGuard } from "@/branches/ui/components/OnboardingGuard";
-import { SettingsProvider } from "@/settings/api/SettingsContext";
-import { getSettingsAction } from "@/settings/api/controller";
+import { SettingsProvider } from "@/components/settings/api/SettingsContext";
+import { getSettingsAction } from "@/components/settings/api/controller";
+
+import { BusinessProvider } from "@/inventory/contexts/BusinessContext";
+
+import { BranchSettings } from '@gonza/shared/prisma/db';
 
 export default async function RootLayout({
   children,
@@ -23,10 +27,10 @@ export default async function RootLayout({
 }>) {
   const { branchId, branchType } = await getActiveBranch();
   
-  let initialSettings = {};
+  let initialSettings: Partial<BranchSettings> = {};
   if (branchId) {
     const settingsRes = await getSettingsAction();
-    initialSettings = settingsRes.success ? settingsRes.data : {};
+    initialSettings = (settingsRes.success && settingsRes.data) ? settingsRes.data : {};
   }
 
   return (
@@ -35,17 +39,19 @@ export default async function RootLayout({
         <ThemeProvider>
           <OnboardingGuard>
             <SettingsProvider initialSettings={initialSettings}>
-              <SidebarProvider>
-                <div className="flex min-h-screen" suppressHydrationWarning>
-                  <Sidebar branchSwitcherSlot={<BranchSwitcher />} activeBranchType={branchType} />
-                  <div className="flex-1 flex flex-col min-w-0 lg:ml-56" suppressHydrationWarning>
-                    <Topbar />
-                    <main className="p-4 md:p-6 lg:p-8">
-                      {children}
-                    </main>
+              <BusinessProvider>
+                <SidebarProvider>
+                  <div className="flex min-h-screen" suppressHydrationWarning>
+                    <Sidebar branchSwitcherSlot={<BranchSwitcher />} activeBranchType={branchType} />
+                    <div className="flex-1 flex flex-col min-w-0 lg:ml-56" suppressHydrationWarning>
+                      <Topbar />
+                      <main className="p-4 md:p-6 lg:p-8">
+                        {children}
+                      </main>
+                    </div>
                   </div>
-                </div>
-              </SidebarProvider>
+                </SidebarProvider>
+              </BusinessProvider>
             </SettingsProvider>
           </OnboardingGuard>
         </ThemeProvider>

@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useCallback } from "react";
 import { StockHistoryEntry } from "@/inventory/types/";
 import { getStockHistoryAction, applyStockCorrectionAction } from "@/app/inventory/actions";

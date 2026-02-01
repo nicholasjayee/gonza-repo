@@ -2,7 +2,12 @@ import React from 'react';
 import { SaleForm } from '../components/SaleForm';
 import { ShoppingCart } from 'lucide-react';
 
-export default function NewSalePage() {
+
+interface NewSalePageProps {
+    saleId?: string;
+}
+
+export default function NewSalePage({ saleId }: NewSalePageProps) {
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -19,7 +24,7 @@ export default function NewSalePage() {
                 </div>
             </div>
 
-            <SaleForm />
+            <SaleForm saleId={saleId} />
         </div>
     );
 }

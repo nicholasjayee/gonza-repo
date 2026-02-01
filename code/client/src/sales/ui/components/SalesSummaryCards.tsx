@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useMemo } from 'react';
 import { Card, CardContent } from '@/shared/components/ui/card';
 import { Sale } from '@/sales/types';

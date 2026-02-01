@@ -6,7 +6,7 @@ import { getTasksAction } from '@/tasks/api/controller';
 import { TaskList } from '../components/TaskList';
 import { TaskCalendar } from '../components/TaskCalendar';
 import { CreateTaskModal } from '../components/CreateTaskModal';
-import { Task } from '@prisma/client'; // or custom type if needed
+import { Task } from '@gonza/shared/prisma/db'; // or custom type if needed
 
 export default function TasksPage() {
     const [view, setView] = useState<'calendar' | 'list'>('calendar');

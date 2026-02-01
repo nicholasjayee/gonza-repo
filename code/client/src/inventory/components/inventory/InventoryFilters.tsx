@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { Search, Filter } from "lucide-react";
 import { Input } from "@/inventory/components/ui/input";

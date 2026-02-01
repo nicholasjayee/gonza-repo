@@ -1,101 +1,119 @@
-// import { Capacitor } from '@capacitor/core';
-// import { Storage } from '@capacitor/storage';
-// import BluetoothSpp from 'capacitor-bluetooth-spp';
+import { Capacitor } from '@capacitor/core';
+import { Preferences } from '@capacitor/preferences';
+import BluetoothSpp from 'capacitor-bluetooth-spp';
 
-// let connectedDevice: string | null = null;
+let connectedDevice: string | null = null;
 
-// BluetoothSpp.addListener('connected', (info) => console.log('Event: connected', info));
-// BluetoothSpp.addListener('connectionFailed', (info) => console.log('Event: connectionFailed', info));
-// BluetoothSpp.addListener('disconnected', (info) => console.log('Event: disconnected', info));
-// BluetoothSpp.addListener('deviceFound', (device) => console.log('Event: deviceFound', device));
-// BluetoothSpp.addListener('discoveryFinished', () => console.log('Event: discoveryFinished'));
 
-// export async function printBluetooth(data: string) {
-//   if (!Capacitor.isNativePlatform()) {
-//     return { success: false, message: 'Not a native platform' };
-//   }
+interface BluetoothDevice {
+  name: string;
+  address: string;
+  id?: string;
+  class?: number;
+}
 
-//   try {
-//     await BluetoothSpp.requestPermissions();
+interface BluetoothInfo {
+  name?: string;
+  address?: string;
+  message?: string;
+}
 
-//     // Try loading stored printer
-//     const saved = await Storage.get({ key: 'selected_printer' });
-//     let storedPrinter = saved.value;
+// Use any cast to avoid type errors if the plugin types are incomplete
+/* eslint-disable @typescript-eslint/no-explicit-any */
+(BluetoothSpp as any).addListener('connected', (info: BluetoothInfo) => console.log('Event: connected', info));
+(BluetoothSpp as any).addListener('connectionFailed', (info: BluetoothInfo) => console.log('Event: connectionFailed', info));
+(BluetoothSpp as any).addListener('disconnected', (info: BluetoothInfo) => console.log('Event: disconnected', info));
+(BluetoothSpp as any).addListener('deviceFound', (device: BluetoothDevice) => console.log('Event: deviceFound', device));
+(BluetoothSpp as any).addListener('discoveryFinished', () => console.log('Event: discoveryFinished'));
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
-//     // If the stored printer exists, try using it
-//     if (storedPrinter) {
-//       try {
-//         console.log('Trying stored printer:', storedPrinter);
-//         const res = await BluetoothSpp.connect({ address: storedPrinter });
+export async function printBluetooth(data: string) {
+  if (!Capacitor.isNativePlatform()) {
+    return { success: false, message: 'Not a native platform' };
+  }
 
-//         if (res?.connected) {
-//           connectedDevice = storedPrinter;
-//           console.log('Connected using stored printer.');
-//         } else {
-//           storedPrinter = null; // fallback
-//         }
-//       } catch (_) {
-//         console.log('Stored printer failed. Falling back to selection.');
-//         storedPrinter = null;
-//       }
-//     }
+  try {
+    await BluetoothSpp.requestPermissions();
 
-//     // Fallback if no stored printer or it failed
-//     if (!storedPrinter && !connectedDevice) {
-//       console.log('Listing paired devices...');
-//       const paired = await BluetoothSpp.listPairedDevices();
+    // Try loading stored printer
+    const saved = await Preferences.get({ key: 'selected_printer' });
+    let storedPrinter = saved.value;
 
-//       if (!paired?.devices?.length) {
-//         throw new Error('No paired devices found');
-//       }
+    // If the stored printer exists, try using it
+    if (storedPrinter) {
+      try {
+        console.log('Trying stored printer:', storedPrinter);
+        const res = await BluetoothSpp.connect({ address: storedPrinter });
 
-//       const deviceNames = paired.devices.map((d) => d.name || d.address);
+        if (res?.connected) {
+          connectedDevice = storedPrinter;
+          console.log('Connected using stored printer.');
+        } else {
+          storedPrinter = null; // fallback
+        }
+      } catch (error) {
+        console.log('Stored printer failed. Falling back to selection.', error);
+        storedPrinter = null;
+      }
+    }
 
-//       const selection = prompt(
-//         `Select a Bluetooth device:\n${deviceNames
-//           .map((n, i) => `${i + 1}: ${n}`)
-//           .join('\n')}`,
-//         '1'
-//       );
+    // Fallback if no stored printer or it failed
+    if (!storedPrinter && !connectedDevice) {
+      console.log('Listing paired devices...');
+      const paired = await BluetoothSpp.listPairedDevices();
 
-//       const index = parseInt(selection || '1', 10) - 1;
+      if (!paired?.devices?.length) {
+        throw new Error('No paired devices found');
+      }
 
-//       if (index < 0 || index >= paired.devices.length) {
-//         throw new Error('Invalid device selection');
-//       }
+      const deviceNames = paired.devices.map((d: BluetoothDevice) => d.name || d.address);
 
-//       const device = paired.devices[index];
-//       console.log('Connecting to', device.name, device.address);
+      const selection = prompt(
+        `Select a Bluetooth device:\n${deviceNames
+          .map((n: string, i: number) => `${i + 1}: ${n}`)
+          .join('\n')}`,
+        '1'
+      );
 
-//       const connectRes = await BluetoothSpp.connect({ address: device.address });
+      const index = parseInt(selection || '1', 10) - 1;
 
-//       if (!connectRes?.connected) throw new Error('Failed to connect');
+      if (index < 0 || index >= paired.devices.length) {
+        throw new Error('Invalid device selection');
+      }
 
-//       connectedDevice = device.address;
+      const device = paired.devices[index];
+      console.log('Connecting to', device.name, device.address);
 
-//       // Store selected printer for future automatic use
-//       await Storage.set({
-//         key: 'selected_printer',
-//         value: device.address,
-//       });
+      const connectRes = await BluetoothSpp.connect({ address: device.address });
 
-//       console.log('Printer saved:', device.address);
-//     }
+      if (!connectRes?.connected) throw new Error('Failed to connect');
 
-//     // Send print data
-//     await BluetoothSpp.write({ data });
+      connectedDevice = device.address;
 
-//     // Feed paper (optional)
-//     const feedLines = "\x1B\x64\x03";
-//     await BluetoothSpp.write({ data: feedLines });
+      // Store selected printer for future automatic use
+      await Preferences.set({
+        key: 'selected_printer',
+        value: device.address,
+      });
 
-//     return { success: true, message: 'Printed successfully' };
+      console.log('Printer saved:', device.address);
+    }
 
-//   } catch (err: any) {
-//     console.error('Bluetooth print failed:', err);
-//     try { await BluetoothSpp.disconnect(); } catch (_) {}
-//     connectedDevice = null;
+    // Send print data
+    await BluetoothSpp.write({ data });
 
-//     return { success: false, message: err?.message || 'Unknown error' };
-//   }
-// }
+    // Feed paper (optional)
+    const feedLines = "\x1B\x64\x03";
+    await BluetoothSpp.write({ data: feedLines });
+
+    return { success: true, message: 'Printed successfully' };
+
+  } catch (err: unknown) {
+    console.error('Bluetooth print failed:', err);
+    try { await BluetoothSpp.disconnect(); } catch (disconnectErr) { console.log('Disconnect error', disconnectErr); }
+    connectedDevice = null;
+
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+    return { success: false, message: errorMessage };
+  }
+}

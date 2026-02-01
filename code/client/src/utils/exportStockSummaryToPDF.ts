@@ -2,7 +2,16 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 
-export const exportStockSummaryToPDF = (data: any[], dateRange: { from?: Date; to?: Date } | null) => {
+
+interface StockSummaryItem {
+  name: string;
+  category: string;
+  stock: number;
+  costValue: number;
+  salesValue: number;
+}
+
+export const exportStockSummaryToPDF = (data: StockSummaryItem[], dateRange: { from?: Date; to?: Date } | null) => {
   const doc = new jsPDF();
 
   const title = 'Stock Summary Report';
@@ -16,7 +25,7 @@ export const exportStockSummaryToPDF = (data: any[], dateRange: { from?: Date; t
   doc.text(dateStr, 14, 30);
 
   const tableColumn = ["Product", "Category", "Stock", "Cost Value", "Sales Value"];
-  const tableRows: any[] = [];
+  const tableRows: (string | number)[][] = [];
 
   data.forEach(item => {
     const row = [

@@ -47,14 +47,14 @@ export const generateVectorPDF = async (
       allowTaint: true
     });
 
-    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    const imgData = canvas.toDataURL('image/png', 1.0); // Use PNG for better quality
     const imgWidth = contentWidth;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
     // Check if content fits on one page
     if (imgHeight <= pageHeight - margins.top - margins.bottom) {
       // Single page - add image
-      pdf.addImage(imgData, 'JPEG', margins.left, margins.top, imgWidth, imgHeight);
+      pdf.addImage(imgData, 'PNG', margins.left, margins.top, imgWidth, imgHeight);
     } else {
       // Multiple pages needed
       let yPosition = 0;
@@ -122,7 +122,6 @@ export const generateReceiptVectorPDF = async (
       width: element.scrollWidth
     });
 
-    const imgData = canvas.toDataURL('image/png', 1.0); // Use PNG for better quality
     const imgWidth = contentWidth;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 

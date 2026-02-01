@@ -1,14 +1,10 @@
 import { generateReceiptVectorPDF } from './generateReceiptVectorPDF';
-import { isIOS } from './deviceDetection';
-import { ReceiptData } from '@/sales/types/receipt';
 
-interface PDFOptions {
-  autoPrint?: boolean;
-  isReceipt?: boolean;
-}
+
+
 
 // Legacy function for non-receipt PDFs (keeping image-based approach for now)
-const generateImagePDF = async (element: HTMLElement, filename: string, options: PDFOptions = {}) => {
+const generateImagePDF = async (element: HTMLElement, filename: string) => {
   const { generateVectorPDF } = await import('./generateVectorPDF');
   await generateVectorPDF(element, {
     filename,
@@ -18,34 +14,17 @@ const generateImagePDF = async (element: HTMLElement, filename: string, options:
   });
 };
 
+
+
 export const generatePDF = async (
-  element: HTMLElement, 
-  filename: string, 
-  options: PDFOptions = {}
+  element: HTMLElement,
+  filename: string
 ): Promise<void> => {
-  const { autoPrint = false, isReceipt = false } = options;
-
   try {
-    if (isIOS()) {
-      // For iOS, use the original approach
-      await generateImagePDF(element, filename, options);
-    } else {
-      // For receipts, we'll need to extract data from the element
-      // For now, fall back to image-based approach for non-receipt PDFs
-      if (!isReceipt) {
-        await generateImagePDF(element, filename, options);
-      } else {
-        // This will be handled by the PrintableReceipt component
-        // which will call generateReceiptVectorPDF directly with structured data
-        await generateImagePDF(element, filename, options);
-      }
-
-      if (autoPrint) {
-        setTimeout(() => {
-          window.print();
-        }, 500);
-      }
-    }
+    // Basic implementation delegated to generateImagePDF
+    // We ignore iOS specific logic here for simplicity as we are unifying on generateImagePDF
+    // which wraps generateVectorPDF
+    await generateImagePDF(element, filename);
   } catch (error) {
     console.error('Error generating PDF:', error);
     throw error;

@@ -30,6 +30,27 @@ export async function getCurrentUserAction() {
   return { success: true, user: auth.user };
 }
 
+export async function getAllProductIdentifiersAction() {
+  const auth = await getAuth();
+  if (!auth.authorized) throw new Error("Unauthorized");
+
+  try {
+    const { branchId } = await getActiveBranch();
+    if (!branchId) throw new Error("No active branch found");
+
+    const products = await db.product.findMany({
+      where: { branchId },
+      select: { id: true, name: true },
+    });
+
+    return { success: true, data: products };
+  } catch (error: unknown) {
+    console.error("Error fetching product identifiers:", error);
+    const message = error instanceof Error ? error.message : "Failed to fetch products";
+    return { success: false, error: message };
+  }
+}
+
 export async function getInventoryProductsAction(
   filters: ProductFilters,
   page: number = 1,
@@ -926,45 +947,160 @@ export async function createCategoryAction(name: string) {
     }
 }
 
-export async function getStockSummaryReportAction(_from?: Date, _to?: Date) {
+export async function getStockSummaryReportAction(from: Date, to: Date) {
   const auth = await getAuth();
   if (!auth.authorized) throw new Error("Unauthorized");
 
   try {
     const { branchId } = await getActiveBranch();
-    // Fetch products
+    if (!branchId) throw new Error("No active branch found");
+
     const products = await db.product.findMany({
       where: { branchId },
-      include: { category: true }
+      include: { 
+        category: true,
+      }
     });
 
-    // Simplify: Just return products with current stock for now
-    // A full report would need complex queries on SaleItem and ProductHistory
-    // This is a placeholder for real implementation to replace dummy data
-    
-    const summary = products.map(p => ({
-      productId: p.id,
-      productName: p.name,
-      itemNumber: p.sku,
-      imageUrl: p.image,
-      costPrice: p.costPrice,
-      sellingPrice: p.sellingPrice,
-      openingStock: p.stock, // Approximation: simplified
-      itemsSold: 0, // Placeholder
-      stockIn: 0, // Placeholder
-      transferOut: 0,
-      returnIn: 0,
-      returnOut: 0,
-      closingStock: p.stock,
-      category: p.category?.name || 'Uncategorized',
-      adjustments: 0,
-      adjustmentsValue: 0,
-      revaluation: 0,
+    const reportData = await Promise.all(products.map(async (product) => {
+       // 1. Get Opening Stock (stock at 'from' date)
+       const lastEntryBeforeStart = await db.productHistory.findFirst({
+         where: {
+            productId: product.id,
+            createdAt: { lt: from }
+         },
+         orderBy: { createdAt: 'desc' }
+       });
+       
+       let openingStock = 0;
+       if (lastEntryBeforeStart) {
+         openingStock = lastEntryBeforeStart.newStock;
+       } else if (product.createdAt < from) {
+         openingStock = 0; // Assume 0 if no history found but product existed
+       } else {
+         openingStock = 0; // Created after start date
+       }
+
+       // 2. Get Transactions within range
+       const historyInRange = await db.productHistory.findMany({
+         where: {
+            productId: product.id,
+            createdAt: { gte: from, lte: to }
+         }
+       });
+
+       let itemsSold = 0;
+       let stockIn = 0;
+       let transferOut = 0;
+       let returnIn = 0;
+       let returnOut = 0;
+
+       historyInRange.forEach(entry => {
+          const type = entry.type;
+          const reason = (entry.reason || "").toLowerCase();
+          const change = entry.quantityChange;
+
+          if (type === 'SALE' || reason.includes('sale')) {
+             itemsSold += Math.abs(change);
+          } else if (type === 'RESTOCK' || reason.includes('purchase') || reason.includes('initial')) {
+             stockIn += Math.abs(change);
+          } else if (reason.includes('transfer out')) {
+             transferOut += Math.abs(change);
+          } else if (reason.includes('return in') || reason.includes('customer return')) {
+             returnIn += Math.abs(change);
+          } else if (reason.includes('return out') || reason.includes('return to supplier')) {
+             returnOut += Math.abs(change);
+          } else {
+             // Fallback
+             if (change > 0) stockIn += change;
+             else itemsSold += Math.abs(change);
+          }
+       });
+
+       const closingStock = openingStock + stockIn + returnIn - itemsSold - transferOut - returnOut;
+       
+       const revaluation = closingStock * product.costPrice;
+
+       return {
+          productId: product.id,
+          productName: product.name,
+          itemNumber: product.sku || "",
+          imageUrl: product.image,
+          costPrice: product.costPrice,
+          sellingPrice: product.sellingPrice,
+          category: product.category?.name,
+          openingStock,
+          itemsSold,
+          stockIn,
+          transferOut,
+          returnIn,
+          returnOut,
+          closingStock,
+          revaluation
+       };
     }));
 
-    return { success: true, data: serialize(summary) };
-  } catch (e: any) {
-    console.error(e);
-    return { success: false, error: e.message };
+    return { success: true, data: reportData };
+  } catch (error: unknown) {
+    console.error("Error fetching stock summary report:", error);
+    const message = error instanceof Error ? error.message : "Failed to fetch report";
+    return { success: false, error: message };
+  }
+}
+
+export async function updateProductsBulkAction(
+  updates: Array<{ id: string; updated: any; imageFile?: any }>,
+  userId?: string, // Kept for signature compatibility if needed
+  changeReason?: string,
+  referenceId?: string,
+) {
+  const auth = await getAuth();
+  if (!auth.authorized) throw new Error("Unauthorized");
+
+  try {
+    const { branchId } = await getActiveBranch();
+    if (!branchId) throw new Error("No active branch found");
+
+    return await db.$transaction(async (tx) => {
+      for (const update of updates) {
+        const { id, updated } = update;
+        
+        const currentProduct = await tx.product.findUnique({ where: { id } });
+        if (!currentProduct) continue;
+
+        const updateData: any = {};
+        if (updated.name !== undefined) updateData.name = updated.name;
+        if (updated.description !== undefined) updateData.description = updated.description;
+        if (updated.sellingPrice !== undefined) updateData.sellingPrice = updated.sellingPrice;
+        if (updated.costPrice !== undefined) updateData.costPrice = updated.costPrice;
+        if (updated.quantity !== undefined) updateData.stock = updated.quantity;
+        if (updated.minimumStock !== undefined) updateData.minStock = updated.minimumStock;
+        if (updated.imageUrl !== undefined) updateData.image = updated.imageUrl;
+
+        await tx.product.update({
+          where: { id },
+          data: updateData
+        });
+
+        if (updated.quantity !== undefined && updated.quantity !== currentProduct.stock && changeReason !== 'skip-history') {
+           await tx.productHistory.create({
+             data: {
+               productId: id,
+               userId: auth.user!.id,
+               oldStock: currentProduct.stock,
+               newStock: updated.quantity,
+               quantityChange: updated.quantity - currentProduct.stock,
+               type: updated.quantity > currentProduct.stock ? "RESTOCK" : "SALE",
+               reason: changeReason || (updated.quantity > currentProduct.stock ? "Manual stock addition" : "Manual stock reduction"),
+               referenceId: referenceId
+             }
+           });
+        }
+      }
+      return { success: true };
+    });
+  } catch (error: unknown) {
+    console.error("Error updating products bulk:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Failed to update products" };
   }
 }

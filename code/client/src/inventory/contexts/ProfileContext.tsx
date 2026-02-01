@@ -1,4 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+"use client";
+
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { useBusiness } from "@/inventory/contexts/BusinessContext";
 import { getCurrentUserAction } from "@/app/inventory/actions";
 import { toast } from "sonner";
 
@@ -48,7 +51,21 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({
   );
   const [isLoading, setIsLoading] = useState(false);
 
-  const loadProfiles = async () => {
+  const handleSetCurrentProfile = useCallback((profile: BusinessProfile | null) => {
+    setCurrentProfile(profile);
+    if (currentBusiness?.id) {
+      if (profile) {
+        localStorage.setItem(
+          `currentProfile_${currentBusiness.id}`,
+          profile.id,
+        );
+      } else {
+        localStorage.removeItem(`currentProfile_${currentBusiness.id}`);
+      }
+    }
+  }, [currentBusiness?.id]);
+
+  const loadProfiles = useCallback(async () => {
     if (!userId || !currentBusiness?.id) return;
 
     setIsLoading(true);
@@ -74,7 +91,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [userId, currentBusiness?.id]);
 
   const createProfile = async (
     data: Omit<
@@ -145,7 +162,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({
       setProfiles([]);
       setCurrentProfile(null);
     }
-  }, [currentBusiness?.id, userId]);
+  }, [currentBusiness?.id, userId, loadProfiles]);
 
   useEffect(() => {
     if (profiles.length > 0 && currentBusiness?.id) {
@@ -155,7 +172,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({
       if (savedProfileId) {
         const profile = profiles.find((p) => p.id === savedProfileId);
         if (profile) {
-          setCurrentProfile(profile);
+          handleSetCurrentProfile(profile);
           return;
         }
       }
@@ -163,21 +180,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({
         handleSetCurrentProfile(profiles[0]);
       }
     }
-  }, [profiles, currentBusiness?.id]);
-
-  const handleSetCurrentProfile = (profile: BusinessProfile | null) => {
-    setCurrentProfile(profile);
-    if (currentBusiness?.id) {
-      if (profile) {
-        localStorage.setItem(
-          `currentProfile_${currentBusiness.id}`,
-          profile.id,
-        );
-      } else {
-        localStorage.removeItem(`currentProfile_${currentBusiness.id}`);
-      }
-    }
-  };
+  }, [profiles, currentBusiness?.id, currentProfile, handleSetCurrentProfile]);
 
   return (
     <ProfileContext.Provider

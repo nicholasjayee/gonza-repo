@@ -14,6 +14,14 @@ interface VectorPDFOptions {
   returnBlob?: boolean;
 }
 
+
+interface AddTextOptions {
+  fontSize?: number;
+  fontStyle?: string;
+  align?: 'left' | 'center' | 'right' | 'justify';
+  maxWidth?: number;
+}
+
 // Helper function to format currency properly (e.g., "Ush 25,000")
 const formatCurrency = (amount: number, currency: string = 'Ush'): string => {
   const formatted = Math.round(amount).toLocaleString();
@@ -52,7 +60,7 @@ export const generateReceiptVectorPDF = async (
     pdf.setLineWidth(STANDARD_LINE_WIDTH);
   };
 
-  const addText = (text: string, x: number, y: number, options: any = {}) => {
+  const addText = (text: string, x: number, y: number, options: AddTextOptions = {}) => {
     const { fontSize = 10, fontStyle = 'normal', align = 'left', maxWidth } = options;
     pdf.setFontSize(fontSize);
     pdf.setFont('helvetica', fontStyle);
@@ -67,7 +75,7 @@ export const generateReceiptVectorPDF = async (
     }
   };
 
-  const addMultilineText = (text: string, x: number, y: number, maxWidth: number, options: any = {}) => {
+  const addMultilineText = (text: string, x: number, y: number, maxWidth: number, options: AddTextOptions & { lineHeight?: number } = {}) => {
     const { fontSize = 10, fontStyle = 'normal', align = 'left', lineHeight = 1.2 } = options;
     pdf.setFontSize(fontSize);
     pdf.setFont('helvetica', fontStyle);
@@ -118,7 +126,7 @@ export const generateReceiptVectorPDF = async (
   currentY += innerMargin;
 
   // Header section with logo on left, business info on right
-  const headerStartY = currentY;
+
   
   // Logo on the left (if available) - reduced size
   if (receiptData.businessLogo) {
@@ -126,7 +134,7 @@ export const generateReceiptVectorPDF = async (
       const img = new Image();
       img.crossOrigin = 'anonymous';
       
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>(async (resolve) => {
         img.onload = () => {
           try {
             const canvas = document.createElement('canvas');
@@ -158,7 +166,7 @@ export const generateReceiptVectorPDF = async (
           resolve();
         };
         
-        img.src = receiptData.businessLogo;
+        img.src = receiptData.businessLogo || '';
       });
     } catch (error) {
       console.error('Error processing logo:', error);
@@ -166,7 +174,6 @@ export const generateReceiptVectorPDF = async (
   }
 
   // Business information on the right - extended area with right alignment
-  const businessInfoX = innerLeft + innerWidth * 0.25; // Extended area starts earlier
   const businessInfoWidth = innerWidth * 0.75; // Wider area for business info
   const businessInfoRightX = innerLeft + innerWidth; // Right edge for alignment
   let businessY = currentY;
@@ -341,8 +348,6 @@ export const generateReceiptVectorPDF = async (
     // Check if we need a new page for this item
     checkPageBreak(calculatedRowHeight + 5);
     
-    const itemSubtotal = item.unitPrice * item.quantity;
-    const discountAmount = item.discountAmount || 0;
     const itemTotal = item.amount; // This should already be calculated with discount applied
     subtotal += itemTotal;
     
@@ -393,7 +398,7 @@ export const generateReceiptVectorPDF = async (
       if ((item.discountPercentage || 0) > 0) {
         discountText = `${item.discountPercentage}%`;
       } else if ((item.discountAmount || 0) > 0) {
-        discountText = formatCurrency(item.discountAmount, receiptData.currency);
+        discountText = formatCurrency(item.discountAmount || 0, receiptData.currency);
       }
       addText(discountText, tableX + colWidths[3] - 3, currentY + calculatedRowHeight/2 + 1.5, {
         fontSize: 9,
@@ -503,20 +508,14 @@ export const generateReceiptVectorPDF = async (
   currentY += 8;
   
   // Tax row (if applicable)
-  if (receiptData.showTaxRow && receiptData.taxAmount > 0) {
+  if (receiptData.showTaxRow && (receiptData.taxAmount || 0) > 0) {
     addRect(totalsStartX, currentY, totalsWidth, 8, 'S');
     pdf.setFillColor(250, 250, 250);
     addRect(totalsStartX, currentY, totalsWidth, 8, 'F');
     
-    addText(`Tax (${receiptData.taxRate}%):`, totalsStartX + 4, currentY + 5.5, {
-      fontSize: 10,
-      fontStyle: 'normal'
-    });
-    
-    // Vertical line separating label and value
     addLine(totalsStartX + labelWidth, currentY, totalsStartX + labelWidth, currentY + 8);
     
-    addText(formatCurrency(receiptData.taxAmount, receiptData.currency), totalsStartX + labelWidth + valueWidth - 4, currentY + 5.5, {
+    addText(formatCurrency(receiptData.taxAmount || 0, receiptData.currency), totalsStartX + labelWidth + valueWidth - 4, currentY + 5.5, {
       fontSize: 10,
       fontStyle: 'normal',
       align: 'right'
@@ -793,7 +792,7 @@ export const generateReceiptVectorPDF = async (
           resolve();
         };
         
-        img.src = receiptData.signature;
+        img.src = receiptData.signature || '';
       });
     } catch (error) {
       console.error('Error processing signature:', error);

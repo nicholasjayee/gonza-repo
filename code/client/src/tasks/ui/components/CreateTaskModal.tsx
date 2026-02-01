@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, User, Flag, AlignLeft } from 'lucide-react';
 import { createTaskAction, getBranchUsersAction } from '@/tasks/api/controller';
-import { TaskPriority } from '@prisma/client';
+import { TaskPriority } from '@gonza/shared/prisma/db';
 
 interface CreateTaskModalProps {
     onClose: () => void;

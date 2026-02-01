@@ -46,6 +46,15 @@ model User {
   
   assignedTasks  Task[]        @relation("TaskAssignee")
   createdTasks   Task[]        @relation("TaskCreator")
+  taskCategories TaskCategory[]
+  expenseCategories ExpenseCategory[]
+  saleCategories SaleCategory[]
+  activityHistory ActivityHistory[]
+
+  cashTransactions CashTransaction[]
+  receivedPayments InstallmentPayment[] @relation("PaymentReceiver")
+  salesGoals       SalesGoal[]
+
   isActive      Boolean        @default(true)
 }
 
@@ -254,6 +263,12 @@ model Branch {
   toTransfers    StockTransfer[] @relation("ToBranch")
   requisitions   Requisition[]
   tasks          Task[]
+  taskCategories TaskCategory[]
+  expenseCategories ExpenseCategory[]
+  saleCategories SaleCategory[]
+  activityHistory ActivityHistory[]
+  cashTransactions CashTransaction[]
+  salesGoals       SalesGoal[]
   settings       BranchSettings?
 }
 
@@ -263,6 +278,7 @@ model CashAccount {
   description    String?
   initialBalance Decimal  @default(0) @db.Decimal(10, 2)
   currentBalance Decimal  @default(0) @db.Decimal(10, 2)
+  isDefault      Boolean  @default(false)
   isActive       Boolean  @default(true)
   
   branchId       String
@@ -272,6 +288,56 @@ model CashAccount {
   
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  transactions   CashTransaction[]
+  expenses       Expense[]
+}
+
+model CashTransaction {
+  id               String   @id @default(cuid())
+  amount           Decimal  @db.Decimal(10, 2)
+  transactionType  String   // "cash_in", "cash_out", "transfer_in", "transfer_out"
+  category         String?
+  description      String?
+  personInCharge   String?  // person_in_charge
+  tags             String[]
+  date             DateTime
+  paymentMethod    String?  // payment_method
+  receiptImage     String?  // receipt_image
+
+  accountId        String
+  account          CashAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  branchId         String // location_id
+  branch           Branch @relation(fields: [branchId], references: [id])
+
+  userId           String
+  user             User   @relation(fields: [userId], references: [id])
+  
+  installmentPayment InstallmentPayment?
+  expenses           Expense[]
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model InstallmentPayment {
+  id                String   @id @default(cuid())
+  amount            Decimal  @db.Decimal(10, 2)
+  paymentDate       DateTime // payment_date
+  notes             String?
+
+  saleId            String
+  sale              Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  userId            String
+  user              User     @relation("PaymentReceiver", fields: [userId], references: [id])
+
+  cashTransactionId String?  @unique
+  cashTransaction   CashTransaction? @relation(fields: [cashTransactionId], references: [id])
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 model Expense {
@@ -289,6 +355,11 @@ model Expense {
   user          User     @relation(fields: [userId], references: [id])
 
   receiptImage  String?
+
+  cashAccountId     String?
+  cashAccount       CashAccount?     @relation(fields: [cashAccountId], references: [id])
+  cashTransactionId String?
+  cashTransaction   CashTransaction? @relation(fields: [cashTransactionId], references: [id])
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -371,6 +442,30 @@ model Sale {
   
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+
+  categoryId      String?
+  category        SaleCategory? @relation(fields: [categoryId], references: [id])
+
+  installmentPayments InstallmentPayment[]
+}
+
+model SaleCategory {
+  id          String   @id @default(cuid())
+  name        String
+  isDefault   Boolean  @default(false)
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+
+  branchId    String
+  branch      Branch   @relation(fields: [branchId], references: [id])
+
+  sales       Sale[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([branchId, name])
 }
 
 model SaleItem {
@@ -533,6 +628,41 @@ enum RequisitionStatus {
 // 🗓️ TASKS MODULE
 // =========================
 
+model TaskCategory {
+  id          String   @id @default(cuid())
+  name        String
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  
+  branchId    String?
+  branch      Branch?  @relation(fields: [branchId], references: [id])
+  
+  tasks       Task[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([branchId, name])
+}
+
+model ExpenseCategory {
+  id          String   @id @default(cuid())
+  name        String
+  isDefault   Boolean  @default(false)
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  
+  branchId    String
+  branch      Branch   @relation(fields: [branchId], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([branchId, name])
+}
+
 model Task {
   id          String      @id @default(cuid())
   title       String
@@ -541,6 +671,27 @@ model Task {
   
   priority    TaskPriority @default(NORMAL)
   status      TaskStatus   @default(TODO)
+  
+  // Category
+  categoryId  String?
+  category    TaskCategory? @relation(fields: [categoryId], references: [id])
+  
+  // Completion
+  completed   Boolean      @default(false)
+  completedAt DateTime?
+  
+  // Reminders
+  reminderEnabled Boolean  @default(false)
+  reminderTime    DateTime?
+  
+  // Recurrence
+  isRecurring       Boolean        @default(false)
+  recurrenceType    RecurrenceType?
+  recurrenceEndDate DateTime?
+  recurrenceCount   Int            @default(0)
+  
+  // Hierarchy
+  parentTaskId String?
   
   assignedToId String?
   assignedTo   User?       @relation("TaskAssignee", fields: [assignedToId], references: [id])
@@ -570,6 +721,12 @@ enum TaskStatus {
   CANCELLED
 }
 
+enum RecurrenceType {
+  daily
+  weekly
+  monthly
+}
+
 // =========================
 // ⚙️ SETTINGS MODULE
 // =========================
@@ -596,4 +753,67 @@ model BranchSettings {
   
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+// =========================
+// 📝 ACTIVITY HISTORY
+// =========================
+
+model ActivityHistory {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  user         User     @relation(fields: [userId], references: [id])
+  locationId   String   @map("location_id")
+  branch       Branch   @relation(fields: [locationId], references: [id])
+  
+  activityType ActivityType @map("activity_type")
+  module       ActivityModule 
+  
+  entityType   String   @map("entity_type")
+  entityId     String?  @map("entity_id")
+  entityName   String   @map("entity_name")
+  description  String
+  metadata     Json?
+  
+  profileId    String?  @map("profile_id")
+  profileName  String?  @map("profile_name")
+
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("activity_history")
+}
+
+enum ActivityType {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+enum ActivityModule {
+  SALES
+  INVENTORY
+  EXPENSES
+  FINANCE
+  CUSTOMERS
+  TASKS
+}
+
+model SalesGoal {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  branchId    String
+  branch      Branch   @relation(fields: [branchId], references: [id])
+  
+  month       Int
+  year        Int
+  
+  dailyGoal   Float    @default(0)
+  weeklyGoal  Float    @default(0)
+  monthlyGoal Float    @default(0)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([branchId, userId, month, year])
 }

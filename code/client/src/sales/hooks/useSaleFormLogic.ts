@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useCallback } from 'react';
 import { SaleItem, FormErrors, SaleFormData } from '@/dashboard/types';
 import { useLocalPaymentChanges } from '@/sales/hooks/useLocalPaymentChanges';

@@ -3,7 +3,7 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { MoreVertical, CheckCircle2, Clock, AlertCircle, Calendar as CalendarIcon, User as UserIcon, Trash2, Edit2 } from 'lucide-react';
-import { Task, TaskPriority, TaskStatus } from '@prisma/client'; // Assuming types are available
+import { Task, TaskPriority, TaskStatus } from '@gonza/shared/prisma/db'; // Assuming types are available
 import { updateTaskStatusAction, deleteTaskAction } from '@/tasks/api/controller';
 
 interface TaskListProps {

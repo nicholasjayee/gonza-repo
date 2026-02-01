@@ -43,3 +43,10 @@ export const getDateRange = (filter: string) => {
 export const getDateRangeFromFilter = (filter: string) => {
     return getDateRange(filter);
 };
+
+export const isDateInRange = (date: Date, from: Date | undefined, to: Date | undefined): boolean => {
+  if (!from && !to) return true;
+  if (!from) return date <= to!;
+  if (!to) return date >= from;
+  return date >= from && date <= to;
+};

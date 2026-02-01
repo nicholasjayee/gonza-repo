@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from 'react';
 import { Upload, X, FileSpreadsheet, Check } from 'lucide-react';
 import Papa from 'papaparse';

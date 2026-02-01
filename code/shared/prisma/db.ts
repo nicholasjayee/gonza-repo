@@ -1,7 +1,55 @@
-import { PrismaClient, User, Role, BranchType, SaleSource, PaymentStatus, DiscountType, ProductHistoryType, TransferStatus, RequisitionStatus, TaskPriority, TaskStatus, Prisma } from '@prisma/client';
-export { PrismaClient, BranchType, SaleSource, PaymentStatus, DiscountType, ProductHistoryType, TransferStatus, RequisitionStatus, TaskPriority, TaskStatus, Prisma };
-export type { User, Role };
-import { Pool } from 'pg';                     // ← this line caused the error
+
+import { 
+  PrismaClient, 
+  Prisma,
+  BranchType, 
+  SaleSource, 
+  PaymentStatus, 
+  DiscountType, 
+  ProductHistoryType, 
+  TransferStatus, 
+  RequisitionStatus, 
+  TaskPriority, 
+  TaskStatus, 
+  RecurrenceType, 
+  ActivityType, 
+  ActivityModule,
+  // Models
+  User, 
+  Role, 
+  BranchSettings, 
+  Task, 
+  ActivityHistory, 
+  Sale, 
+  SaleItem, 
+  Expense, 
+  ExpenseCategory, 
+  CashAccount, 
+  CashTransaction,
+  Branch,
+  Product,
+  Customer,
+  Campaign,
+  Message,
+  MessageTemplate,
+  WhatsAppSession,
+  Transaction,
+  Category,
+  Supplier,
+  SaleCategory,
+  StockTransfer,
+  StockTransferItem,
+  Requisition,
+  RequisitionItem,
+  TaskCategory,
+  InstallmentPayment,
+  RefreshToken,
+  Permission,
+  Account,
+  ProductHistory,
+  PasswordResetToken
+} from '@prisma/client';
+import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { env } from '../config/env';
 
@@ -26,3 +74,56 @@ export const db =
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = db;
 }
+
+export { 
+  PrismaClient, 
+  Prisma,
+  BranchType, 
+  SaleSource, 
+  PaymentStatus, 
+  DiscountType, 
+  ProductHistoryType, 
+  TransferStatus, 
+  RequisitionStatus, 
+  TaskPriority, 
+  TaskStatus, 
+  RecurrenceType, 
+  ActivityType, 
+  ActivityModule 
+};
+
+export type { 
+  User, 
+  Role, 
+  BranchSettings, 
+  Task, 
+  ActivityHistory, 
+  Sale, 
+  SaleItem, 
+  Expense, 
+  ExpenseCategory, 
+  CashAccount, 
+  CashTransaction,
+  Branch,
+  Product,
+  Customer,
+  Campaign,
+  Message,
+  MessageTemplate,
+  WhatsAppSession,
+  Transaction,
+  Category,
+  Supplier,
+  SaleCategory,
+  StockTransfer,
+  StockTransferItem,
+  Requisition,
+  RequisitionItem,
+  TaskCategory,
+  InstallmentPayment,
+  RefreshToken,
+  Permission,
+  Account,
+  ProductHistory,
+  PasswordResetToken
+};

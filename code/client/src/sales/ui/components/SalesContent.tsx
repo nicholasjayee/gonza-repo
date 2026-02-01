@@ -108,7 +108,7 @@ export const SalesContent: React.FC = () => {
                         sales={paginatedSales}
                         onViewReceipt={handleViewReceipt}
                         onEditSale={handleEditSale}
-                        onDeleteSale={handleDeleteSale}
+                        onDeleteSale={(sale) => handleDeleteSale(deleteSale)(sale.id)}
                         currency={currency}
                     />
 

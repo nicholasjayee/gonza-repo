@@ -10,7 +10,7 @@ interface SoldItem {
   averageCost?: number;
 }
 
-export const exportSoldItemsToCSV = (soldItems: SoldItem[], period: string, currency: string = 'USD', costOnlyMode: boolean = false) => {
+export const exportSoldItemsToCSV = (soldItems: SoldItem[], period: string, costOnlyMode: boolean = false) => {
   // Create CSV header based on mode
   const headers = costOnlyMode 
     ? ['Item', 'Quantity', 'Average Cost', 'Total Cost']

@@ -1,110 +1,50 @@
+'use client'
 
-import * as React from 'react';
-import { useState, useEffect, useContext, createContext, useCallback } from 'react';
-import { toast } from 'sonner';
-import { User } from '@/types';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { dataStore } from '@/lib/dataStore';
+import { UserProfile } from '@/components/types/index';
 
 interface AuthContextType {
-  user: User | null;
+  user: UserProfile | null;
   loading: boolean;
-  signIn: () => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
-  signUp: () => Promise<{ error: string | null; user?: User | null }>;
   signOut: () => Promise<void>;
-  resetPassword: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  loading: true,
+  signOut: async () => {},
+});
 
-// Helper to get cookie value
-const getCookie = (name: string): string | null => {
-  if (typeof document === 'undefined') return null;
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
-  return null;
-};
+export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const initializeAuth = useCallback(() => {
-    try {
-      const userDataCookie = getCookie('userData');
-      if (userDataCookie) {
-        const userData = JSON.parse(decodeURIComponent(userDataCookie));
-        setUser(userData);
-      } else {
-        setUser(null);
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const user = await dataStore.getUser();
+        setUser(user);
+      } catch (error) {
+        console.error('Error fetching user:', error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error during auth initialization:', error);
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
+    };
+
+    fetchUser();
   }, []);
 
-  useEffect(() => {
-    initializeAuth();
-
-    // Listen for cookie changes (e.g., from other tabs or manual changes)
-    // Note: This is a simple poll as there's no native 'cookiechange' event
-    const interval = setInterval(initializeAuth, 5000);
-    return () => clearInterval(interval);
-  }, [initializeAuth]);
-
-  const signIn = async () => {
-    // Redirect to the auth app's login page
-    window.location.href = '/api/auth/login';
-  };
-
-  const signInWithGoogle = async () => {
-    // Redirect to the auth app's Google auth route
-    window.location.href = '/api/auth/google';
-  };
-
-  const signUp = async () => {
-    // Redirect to the auth app's signup page
-    window.location.href = '/api/auth/signup';
-    return { error: null, user: null };
-  };
-
   const signOut = async () => {
-    try {
-      // Redirect to the auth app's logout route
-      window.location.href = '/api/auth/logout';
-    } catch (error) {
-      console.error('Unexpected error during logout:', error);
-      toast.error('Error signing out');
-    }
-  };
-
-  const resetPassword = async () => {
-    // Redirect to the auth app's forgot password page
-    window.location.href = '/api/auth/forgot-password';
+    await dataStore.signOut();
+    setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      loading,
-      signIn,
-      signInWithGoogle,
-      signUp,
-      signOut,
-      resetPassword
-    }}>
+    <AuthContext.Provider value={{ user, loading, signOut }}>
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 };

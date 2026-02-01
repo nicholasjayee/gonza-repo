@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useMemo } from "react";
 import { Product, ProductFilters } from "@/inventory/types/";
 

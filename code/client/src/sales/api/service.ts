@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { db, Prisma } from '@gonza/shared/prisma/db';
-import { Sale, CreateSaleInput, PaymentStatus } from '../types';
+import { Sale, CreateSaleInput, PaymentStatus, CreateSaleItemInput } from '../types';
 import { ProductHistoryService } from '@/products/api/historyService';
 
 export class SaleService {
@@ -31,12 +32,12 @@ export class SaleService {
      */
     static async create(data: CreateSaleInput, userId: string, branchId: string): Promise<Sale> {
         // Calculate line totals and sale totals
-        const itemsWithTotals = data.items.map(item => ({
+        const itemsWithTotals = data.items.map((item: CreateSaleItemInput) => ({
             ...item,
             lineTotal: (item.sellingPrice * item.quantity) - item.discount
         }));
 
-        const subtotal = itemsWithTotals.reduce((sum, item) => sum + item.lineTotal, 0);
+        const subtotal = itemsWithTotals.reduce((sum: number, item: any) => sum + item.lineTotal, 0);
         const discountAmount = data.discountType === 'PERCENTAGE'
             ? (subtotal * data.discount) / 100
             : data.discount;
@@ -274,12 +275,12 @@ export class SaleService {
         if (!oldSale) throw new Error('Sale not found');
 
         // Calculate new totals
-        const itemsWithTotals = data.items.map(item => ({
+        const itemsWithTotals = data.items.map((item: CreateSaleItemInput) => ({
             ...item,
             lineTotal: (item.sellingPrice * item.quantity) - item.discount
         }));
 
-        const subtotal = itemsWithTotals.reduce((sum, item) => sum + item.lineTotal, 0);
+        const subtotal = itemsWithTotals.reduce((sum: number, item: any) => sum + item.lineTotal, 0);
         const discountAmount = data.discountType === 'PERCENTAGE'
             ? (subtotal * data.discount) / 100
             : data.discount;

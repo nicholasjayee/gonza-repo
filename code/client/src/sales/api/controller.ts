@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use server';
 
 import { SaleService } from './service';
@@ -58,7 +59,7 @@ export async function getSaleAction(id: string) {
     try {
         const data = await SaleService.getById(id);
         return { success: true, data: serialize(data) };
-    } catch (error) {
+    } catch {
         return { success: false, error: 'Failed to fetch sale' };
     }
 }
@@ -112,7 +113,7 @@ export async function getSalesByCustomerAction(customerId: string) {
     try {
         const data = await SaleService.getByCustomerId(customerId);
         return { success: true, data: serialize(data) };
-    } catch (error) {
+    } catch {
         return { success: false, error: 'Failed to fetch customer sales' };
     }
 }

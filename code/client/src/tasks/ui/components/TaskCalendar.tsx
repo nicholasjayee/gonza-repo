@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 import { ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
-import { Task } from '@prisma/client';
+import { Task } from '@gonza/shared/prisma/db';
 
 interface TaskCalendarProps {
     tasks: any[];

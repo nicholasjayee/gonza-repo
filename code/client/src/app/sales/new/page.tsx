@@ -6,6 +6,14 @@ export const metadata: Metadata = {
     description: 'Create a new sale transaction.',
 };
 
-export default function Page() {
-    return <NewSalePage />;
+
+type Props = {
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+export default async function Page({ searchParams }: Props) {
+    const params = await searchParams;
+    const id = typeof params.id === 'string' ? params.id : undefined;
+    
+    return <NewSalePage saleId={id} />;
 }

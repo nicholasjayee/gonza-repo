@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from 'react';
 import { Customer } from '../../types';
 import { getCustomersAction } from '../../api/controller';

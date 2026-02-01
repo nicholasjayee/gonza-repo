@@ -1,5 +1,5 @@
 import { db } from '@gonza/shared/prisma/db';
-import { Task, TaskPriority, TaskStatus } from '@prisma/client';
+import { Task, TaskPriority, TaskStatus } from '@gonza/shared/prisma/db';
 
 export interface CreateTaskInput {
     title: string;

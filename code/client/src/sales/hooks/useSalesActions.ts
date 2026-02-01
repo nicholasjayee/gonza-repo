@@ -1,37 +1,41 @@
-import { useState, useCallback } from 'react';
-import { Sale } from '@/sales/types';
+"use client";
 
-export function useSalesActions() {
-    const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
-    const [isReceiptDialogOpen, setIsReceiptDialogOpen] = useState(false);
+import { useState } from 'react';
+import { Sale } from './useSalesData';
 
-    const handleViewReceipt = useCallback((sale: Sale) => {
-        setSelectedSale(sale);
-        setIsReceiptDialogOpen(true);
-    }, []);
+export const useSalesActions = () => {
+  const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+  const [isReceiptDialogOpen, setIsReceiptDialogOpen] = useState(false);
 
-    const handleEditSale = useCallback((sale: Sale) => {
-        // Navigate to edit page or open edit dialog
-        console.log('Edit sale:', sale.id);
-        // TODO: Implement navigation to edit page
-    }, []);
+  const handleEditSale = (sale: Sale) => {
+    // Logic for editing sale.
+    // Legacy might navigate or open modal.
+    console.log("Edit sale:", sale);
+    // TODO: Implement navigation or dialog for edit
+  };
 
-    const handleDeleteSale = useCallback((sale: Sale) => {
-        // This will be handled by the parent component
-        console.log('Delete sale:', sale.id);
-    }, []);
+  const handleViewReceipt = (sale: Sale) => {
+    setSelectedSale(sale);
+    setIsReceiptDialogOpen(true);
+  };
 
-    const handleCloseReceiptDialog = useCallback(() => {
-        setIsReceiptDialogOpen(false);
-        setSelectedSale(null);
-    }, []);
+  const handleDeleteSale = (deleteFn: (id: string) => Promise<boolean>) => async (saleId: string) => {
+    if (confirm('Are you sure you want to delete this sale? Stock will be restored.')) {
+        await deleteFn(saleId);
+    }
+  };
 
-    return {
-        selectedSale,
-        isReceiptDialogOpen,
-        handleViewReceipt,
-        handleEditSale,
-        handleDeleteSale,
-        handleCloseReceiptDialog
-    };
-}
+  const handleCloseReceiptDialog = () => {
+    setIsReceiptDialogOpen(false);
+    setSelectedSale(null);
+  };
+
+  return {
+    selectedSale,
+    isReceiptDialogOpen,
+    handleEditSale,
+    handleViewReceipt,
+    handleDeleteSale,
+    handleCloseReceiptDialog
+  };
+};

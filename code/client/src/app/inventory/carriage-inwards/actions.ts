@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use server";
 
-import { db } from "@gonza/shared/prisma/db";
+import { db, Expense } from "@gonza/shared/prisma/db";
 import { authGuard } from "@gonza/shared/middleware/authGuard";
 import { headers, cookies } from "next/headers";
 import { getActiveBranch } from "@/branches/api/branchContext";
@@ -51,7 +51,7 @@ export async function getCarriageInwardsAction() {
     });
 
     // Map Expense to CarriageInward structure expected by frontend
-    const carriageInwards = expenses.map(expense => {
+    const carriageInwards = expenses.map((expense: Expense) => {
       // Parse description to extract supplier if we stored it there
       // Format: "Supplier: [Name] - [Details]"
       let supplierName = "Unknown";

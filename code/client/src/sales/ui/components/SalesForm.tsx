@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect } from 'react';
 import { Card, CardContent } from '@/shared/components/ui/card';
 import SaleFormHeader from './sales-form/SaleFormHeader';
